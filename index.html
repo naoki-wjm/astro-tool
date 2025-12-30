@@ -3,68 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ネイタルチャート計算</title>
+  <title>占星術計算ツール</title>
   <style>
     body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
-    .row { margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .row { margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: end; }
     label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
     input, select { padding: 0.5rem; font-size: 1rem; }
     input[type="number"] { width: 5rem; }
     select { min-width: 8rem; }
     button { padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; }
-    textarea { width: 100%; height: 300px; font-family: monospace; font-size: 0.9rem; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    textarea { width: 100%; height: 200px; font-family: monospace; font-size: 0.9rem; }
     #status { color: #666; margin-bottom: 1rem; }
+    section { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd; }
+    h2 { margin-top: 0; }
   </style>
 </head>
 <body>
-  <h1>ネイタルチャート計算</h1>
+  <h1>占星術計算ツール</h1>
   <div id="status">読み込み中...</div>
 
-  <div class="row">
-    <div>
-      <label>年</label>
-      <input type="number" id="year" value="1990" min="1900" max="2100">
+  <section>
+    <h2>ネイタル</h2>
+    <div class="row">
+      <div>
+        <label>年</label>
+        <input type="number" id="year" value="1990" min="1900" max="2100">
+      </div>
+      <div>
+        <label>月</label>
+        <input type="number" id="month" value="1" min="1" max="12">
+      </div>
+      <div>
+        <label>日</label>
+        <input type="number" id="day" value="1" min="1" max="31">
+      </div>
+      <div>
+        <label>時</label>
+        <input type="number" id="hour" value="12" min="0" max="23">
+      </div>
+      <div>
+        <label>分</label>
+        <input type="number" id="minute" value="0" min="0" max="59">
+      </div>
     </div>
-    <div>
-      <label>月</label>
-      <input type="number" id="month" value="12" min="1" max="12">
-    </div>
-    <div>
-      <label>日</label>
-      <input type="number" id="day" value="29" min="1" max="31">
-    </div>
-    <div>
-      <label>時</label>
-      <input type="number" id="hour" value="14" min="0" max="23">
-    </div>
-    <div>
-      <label>分</label>
-      <input type="number" id="minute" value="30" min="0" max="59">
-    </div>
-  </div>
 
-  <div class="row">
-    <div>
-      <label>都道府県</label>
-      <select id="pref"></select>
+    <div class="row">
+      <div>
+        <label>都道府県</label>
+        <select id="pref"></select>
+      </div>
+      <div>
+        <label>市区町村</label>
+        <select id="city"></select>
+      </div>
     </div>
-    <div>
-      <label>市区町村</label>
-      <select id="city"></select>
+
+    <div class="row">
+      <button id="calc">計算</button>
+      <button id="copy">コピー</button>
     </div>
-  </div>
 
-  <div class="row">
-    <button id="calc">計算</button>
-    <button id="copy">コピー</button>
-  </div>
+    <textarea id="result" readonly></textarea>
+  </section>
 
-  <textarea id="result" readonly></textarea>
-
-  <script type="module" src="/src/main.js"></script>
+  <section>
+    <h2>年間概要</h2>
+    <div class="row">
+      <div>
+        <label>年</label>
+        <input type="number" id="transitYear" value="2025" min="1900" max="2100">
+      </div>
+      <button id="calcYearly" disabled>年間概要</button>
+      <button id="copyYearly" disabled>コピー</button>
+    </div>
+    <textarea id="yearlyResult" readonly></textarea>
+  </section>
 
   <footer style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #ccc; font-size: 0.85rem; color: #666;">
     <a href="https://github.com/naoki-wjm/astro-tool">ソースコード (AGPL-3.0)</a>
   </footer>
+
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
