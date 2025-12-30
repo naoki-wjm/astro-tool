@@ -80,6 +80,45 @@
     <textarea id="yearlyResult" readonly></textarea>
   </section>
 
+  <section>
+    <h2>トランジット</h2>
+    <div class="row">
+      <div>
+        <label>年</label>
+        <input type="number" id="trYear" value="2025" min="1900" max="2100">
+      </div>
+      <div>
+        <label>月</label>
+        <input type="number" id="trMonth" value="1" min="1" max="12">
+      </div>
+      <div>
+        <label>日</label>
+        <input type="number" id="trDay" value="1" min="1" max="31">
+      </div>
+      <button id="calcTransit" disabled>計算</button>
+      <button id="copyTransit" disabled>コピー</button>
+    </div>
+    <textarea id="transitResult" readonly></textarea>
+  </section>
+
+  <section>
+    <h2>ルナリターン</h2>
+    <div class="row">
+      <div>
+        <label>年</label>
+        <input type="number" id="lrYear" value="2025" min="1900" max="2100">
+      </div>
+      <div>
+        <label>月</label>
+        <input type="number" id="lrMonth" value="1" min="1" max="12">
+      </div>
+      <button id="calcLunar" disabled>計算</button>
+      <button id="copyLunar" disabled>コピー</button>
+    </div>
+    <textarea id="lunarResult" readonly></textarea>
+  </section>
+
+
   <footer style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #ccc; font-size: 0.85rem; color: #666;">
     <a href="https://github.com/naoki-wjm/astro-tool">ソースコード (AGPL-3.0)</a>
   </footer>
