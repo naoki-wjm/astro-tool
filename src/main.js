@@ -350,21 +350,24 @@ function calculateTransit() {
 }
 
 function calculateLunarReturn() {
-  if (!swe || !natalPositions || !natalCity) return;
+  if (!swe || !natalPositions) return;
 
   const year = parseInt(document.getElementById('lrYear').value);
   const month = parseInt(document.getElementById('lrMonth').value);
+  const pref = document.getElementById('lrPref').value;
+  const cityName = document.getElementById('lrCity').value;
+
+  const city = cities[pref].find(c => c.name === cityName);
+  if (!city) return;
 
   const natalMoon = natalPositions.find(p => p.name === '月').lon;
 
-  // 月初から探索開始
   let jd = swe.swe_julday(year, month, 1, 0, 1);
   const endJd = swe.swe_julday(year, month + 1, 1, 0, 1);
 
-  let returnJd = null;
+  const returns = [];
 
-  // 月は約27.3日で一周するので、1ヶ月に1回はある
-  // 6時間刻みで粗く探索してから絞り込む
+  // 6時間刻みで粗く探索
   let prevDiff = null;
   for (; jd < endJd; jd += 0.25) {
     const r = swe.swe_calc_ut(jd, 1, 256);
@@ -373,7 +376,7 @@ function calculateLunarReturn() {
     if (diff < -180) diff += 360;
 
     if (prevDiff !== null && prevDiff < 0 && diff >= 0) {
-      // この間にリターンがある、二分探索で絞り込む
+      // 二分探索で絞り込む
       let lo = jd - 0.25, hi = jd;
       for (let i = 0; i < 20; i++) {
         const mid = (lo + hi) / 2;
@@ -384,63 +387,75 @@ function calculateLunarReturn() {
         if (d < 0) lo = mid;
         else hi = mid;
       }
-      returnJd = (lo + hi) / 2;
-      break;
+      returns.push((lo + hi) / 2);
     }
     prevDiff = diff;
   }
 
-  if (!returnJd) {
+  if (returns.length === 0) {
     document.getElementById('lunarResult').value = `${year}年${month}月のルナリターンが見つかりませんでした`;
     return;
   }
 
-  // UTC→JST変換して表示
-  const jstJd = returnJd + 9 / 24;
-  const dt = swe.swe_revjul(jstJd, 1);
-  const h = Math.floor(dt.hour);
-  const m = Math.floor((dt.hour - h) * 60);
+  let output = '';
 
-  let output = `【ルナリターン】${dt.year}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} JST\n`;
-  output += `ネイタル月: ${fmt(natalMoon)}\n`;
-  output += `ハウス: プラシーダス\n\n`;
+  for (let i = 0; i < returns.length; i++) {
+    const returnJd = returns[i];
+    const jstJd = returnJd + 9 / 24;
+    const dt = swe.swe_revjul(jstJd, 1);
+    const h = Math.floor(dt.hour);
+    const m = Math.floor((dt.hour - h) * 60);
 
-  // ルナリターンチャート
-  const houses = swe.swe_houses(returnJd, natalCity.lat, natalCity.lng, 'P');
-
-  output += `■ 天体\n`;
-  for (const [id, name] of PLANETS) {
-    const r = swe.swe_calc_ut(returnJd, id, 256);
-    const lon = r[0], spd = r[3];
-    const house = getHouse(lon, houses.cusps);
-    output += `${name} ${fmt(lon)} (${house}H)${spd < 0 ? ' R' : ''}\n`;
-  }
-
-  output += `\nASC ${fmt(houses.ascmc[0])} / MC ${fmt(houses.ascmc[1])}\n`;
-
-  // ネイタルへのアスペクト
-  output += `\n■ ネイタルへのアスペクト\n`;
-  const aspects = [];
-  for (const [id, name] of PLANETS) {
-    const r = swe.swe_calc_ut(returnJd, id, 256);
-    const lon = r[0];
-    
-    for (const n of natalPositions) {
-      const asp = getAspect(lon, n.lon, TRANSIT_ORB);
-      if (asp) {
-        aspects.push(`LR.${name}${asp.symbol}n.${n.name}(${n.house}H)`);
-      }
+    if (returns.length > 1) {
+      output += `【ルナリターン ${i + 1}】`;
+    } else {
+      output += `【ルナリターン】`;
     }
-    const aspAsc = getAspect(lon, natalAngles.asc, TRANSIT_ORB);
-    if (aspAsc) aspects.push(`LR.${name}${aspAsc.symbol}n.ASC`);
-    const aspMc = getAspect(lon, natalAngles.mc, TRANSIT_ORB);
-    if (aspMc) aspects.push(`LR.${name}${aspMc.symbol}n.MC`);
-  }
+    output += `${dt.year}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} JST\n`;
+    output += `場所: ${pref}${cityName}\n`;
+    output += `ネイタル月: ${fmt(natalMoon)}\n`;
+    output += `ハウス: プラシーダス\n\n`;
 
-  if (aspects.length === 0) {
-    output += `なし\n`;
-  } else {
-    output += aspects.join(' / ');
+    const houses = swe.swe_houses(returnJd, city.lat, city.lng, 'P');
+
+    output += `■ 天体\n`;
+    for (const [id, name] of PLANETS) {
+      const r = swe.swe_calc_ut(returnJd, id, 256);
+      const lon = r[0], spd = r[3];
+      const house = getHouse(lon, houses.cusps);
+      output += `${name} ${fmt(lon)} (${house}H)${spd < 0 ? ' R' : ''}\n`;
+    }
+
+    output += `\nASC ${fmt(houses.ascmc[0])} / MC ${fmt(houses.ascmc[1])}\n`;
+
+    // ネイタルへのアスペクト
+    output += `\n■ ネイタルへのアスペクト\n`;
+    const aspects = [];
+    for (const [id, name] of PLANETS) {
+      const r = swe.swe_calc_ut(returnJd, id, 256);
+      const lon = r[0];
+      
+      for (const n of natalPositions) {
+        const asp = getAspect(lon, n.lon, TRANSIT_ORB);
+        if (asp) {
+          aspects.push(`LR.${name}${asp.symbol}n.${n.name}(${n.house}H)`);
+        }
+      }
+      const aspAsc = getAspect(lon, natalAngles.asc, TRANSIT_ORB);
+      if (aspAsc) aspects.push(`LR.${name}${aspAsc.symbol}n.ASC`);
+      const aspMc = getAspect(lon, natalAngles.mc, TRANSIT_ORB);
+      if (aspMc) aspects.push(`LR.${name}${aspMc.symbol}n.MC`);
+    }
+
+    if (aspects.length === 0) {
+      output += `なし\n`;
+    } else {
+      output += aspects.join(' / ');
+    }
+
+    if (i < returns.length - 1) {
+      output += `\n\n${'─'.repeat(30)}\n\n`;
+    }
   }
 
   document.getElementById('lunarResult').value = output;
@@ -487,6 +502,28 @@ async function init() {
     }
   });
   prefSelect.dispatchEvent(new Event('change'));
+
+  // ルナリターン用の都道府県プルダウン
+  const lrPrefSelect = document.getElementById('lrPref');
+  const lrCitySelect = document.getElementById('lrCity');
+
+  for (const pref of Object.keys(cities)) {
+    const opt = document.createElement('option');
+    opt.value = pref;
+    opt.textContent = pref;
+    lrPrefSelect.appendChild(opt);
+  }
+
+  lrPrefSelect.addEventListener('change', () => {
+    lrCitySelect.innerHTML = '';
+    for (const city of cities[lrPrefSelect.value]) {
+      const opt = document.createElement('option');
+      opt.value = city.name;
+      opt.textContent = city.name;
+      lrCitySelect.appendChild(opt);
+    }
+  });
+  lrPrefSelect.dispatchEvent(new Event('change'));
 
   document.getElementById('calc').addEventListener('click', calculate);
   document.getElementById('copy').addEventListener('click', copyResult);
