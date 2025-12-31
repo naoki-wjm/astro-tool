@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>使い方 - 占星術計算ツール</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; line-height: 1.7; }
+    h1 { border-bottom: 2px solid #333; padding-bottom: 0.5rem; }
+    h2 { margin-top: 2.5rem; border-left: 4px solid #666; padding-left: 0.75rem; }
+    h3 { margin-top: 1.5rem; color: #444; }
+    code { background: #f5f5f5; padding: 0.1rem 0.3rem; border-radius: 3px; }
+    .back-link { margin-bottom: 1.5rem; }
+    .back-link a { color: #666; }
+    table { border-collapse: collapse; margin: 1rem 0; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: #f9f9f9; }
+    .symbol { font-size: 1.1rem; }
+    .prompt-box { background: #f9f9f9; border-left: 3px solid #888; padding: 0.75rem 1rem; margin: 1rem 0; }
+    .prompt-box p { margin: 0.25rem 0; }
+    .prompt-box strong { display: block; margin-bottom: 0.5rem; color: #555; }
+    .note { font-size: 0.9rem; color: #666; background: #fafafa; padding: 0.5rem 0.75rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="back-link"><a href="/">← 計算ツールに戻る</a></div>
+  
+  <h1>使い方</h1>
+
+  <h2>各機能の説明</h2>
+
+  <h3>ネイタル（出生図）</h3>
+  <p>生まれた瞬間の星の配置図です。その人の性格、資質、人生の傾向を読み解くための基本となるチャートです。</p>
+  <p>出力される内容：</p>
+  <ul>
+    <li><strong>天体の位置</strong> - 太陽〜冥王星、ノースノードがどの星座の何度にあるか</li>
+    <li><strong>ASC（アセンダント）/ MC</strong> - 東の地平線・天頂の星座。外見的印象や社会的な顔</li>
+    <li><strong>ハウス</strong> - 12の人生領域（1室=自己、7室=パートナーシップ など）</li>
+    <li><strong>アスペクト</strong> - 天体同士の角度関係。性格の中での葛藤や調和</li>
+  </ul>
+
+  <h3>年間概要</h3>
+  <p>指定した1年間（1月〜12月）のトランジット（経過）をまとめて出力します。1年の流れを俯瞰するのに便利です。</p>
+  <p>出力される内容：</p>
+  <ul>
+    <li><strong>逆行期間</strong> - 水星〜冥王星の逆行開始・終了日</li>
+    <li><strong>星座イングレス</strong> - 外惑星（木星〜冥王星）が星座を移動する日</li>
+    <li><strong>ネイタルへのトランジット</strong> - トランジット天体がネイタル天体にアスペクトを形成する期間</li>
+  </ul>
+
+  <h3>トランジット</h3>
+  <p>特定の日の星の配置と、ネイタルへの影響を見ます。「この日どんな運勢？」を調べるのに使います。</p>
+  <p>出力される内容：</p>
+  <ul>
+    <li><strong>その日の天体位置</strong> - 全天体が今どこにあるか</li>
+    <li><strong>ネイタルへのアスペクト</strong> - トランジット天体からネイタル天体・ASC・MCへの角度</li>
+  </ul>
+
+  <h3>ルナリターン（月の回帰）</h3>
+  <p>月がネイタルの月と同じ位置に戻る瞬間のチャートです。約27.3日周期で起こり、その月（約1ヶ月）のテーマを示します。</p>
+  <p class="note">※月に2回ルナリターンがある場合は、両方出力されます。</p>
+  <p class="note">※「現在地」で計算します。引っ越しや旅行中は、その場所を選択してください。</p>
+  <p>出力される内容：</p>
+  <ul>
+    <li><strong>ルナリターンの日時</strong></li>
+    <li><strong>その瞬間のチャート</strong> - 天体・ハウス・ASC/MC</li>
+    <li><strong>ネイタルへのアスペクト</strong></li>
+  </ul>
+
+  <h3>ソーラーリターン（太陽の回帰）</h3>
+  <p>太陽がネイタルの太陽と同じ位置に戻る瞬間のチャートです。誕生日前後に起こり、その年（誕生日〜翌誕生日）のテーマを示します。</p>
+  <p class="note">※「現在地」で計算します。誕生日を過ごす場所を選択してください。</p>
+  <p>2つのボタンがあります：</p>
+  <ul>
+    <li><strong>「チャート」</strong> - ソーラーリターンの瞬間の配置。1年のテーマを読む</li>
+    <li><strong>「1年間の動き」</strong> - ソーラーリターンを起点とした年間概要。誕生日基準での1年の流れ</li>
+  </ul>
+
+  <h3>シナストリー（相性図）</h3>
+  <p>2人のネイタルを比較して、相性を見ます。恋愛だけでなく、友人・仕事仲間・家族など、あらゆる人間関係に使えます。</p>
+  <p>出力される内容：</p>
+  <ul>
+    <li><strong>A・Bそれぞれのネイタルサマリー</strong></li>
+    <li><strong>相互アスペクト</strong> - Aの天体とBの天体、Aの天体とBのASC/MC の角度関係</li>
+  </ul>
+
+  <h2>出力の読み方</h2>
+
+  <h3>天体</h3>
+  <table>
+    <tr><th>記号</th><th>天体</th><th>象徴</th></tr>
+    <tr><td class="symbol">☉</td><td>太陽</td><td>自我、人生の目的</td></tr>
+    <tr><td class="symbol">☽</td><td>月</td><td>感情、心の安定</td></tr>
+    <tr><td class="symbol">☿</td><td>水星</td><td>思考、コミュニケーション</td></tr>
+    <tr><td class="symbol">♀</td><td>金星</td><td>愛、美、価値観</td></tr>
+    <tr><td class="symbol">♂</td><td>火星</td><td>行動力、情熱</td></tr>
+    <tr><td class="symbol">♃</td><td>木星</td><td>拡大、幸運</td></tr>
+    <tr><td class="symbol">♄</td><td>土星</td><td>制限、責任、課題</td></tr>
+    <tr><td class="symbol">♅</td><td>天王星</td><td>変革、独創性</td></tr>
+    <tr><td class="symbol">♆</td><td>海王星</td><td>夢、直感、曖昧さ</td></tr>
+    <tr><td class="symbol">♇</td><td>冥王星</td><td>変容、死と再生</td></tr>
+    <tr><td class="symbol">☊</td><td>ノースノード</td><td>魂の成長方向</td></tr>
+  </table>
+
+  <h3>星座</h3>
+  <table>
+    <tr><th>記号</th><th>星座</th><th>記号</th><th>星座</th></tr>
+    <tr><td class="symbol">♈</td><td>牡羊座</td><td class="symbol">♎</td><td>天秤座</td></tr>
+    <tr><td class="symbol">♉</td><td>牡牛座</td><td class="symbol">♏</td><td>蠍座</td></tr>
+    <tr><td class="symbol">♊</td><td>双子座</td><td class="symbol">♐</td><td>射手座</td></tr>
+    <tr><td class="symbol">♋</td><td>蟹座</td><td class="symbol">♑</td><td>山羊座</td></tr>
+    <tr><td class="symbol">♌</td><td>獅子座</td><td class="symbol">♒</td><td>水瓶座</td></tr>
+    <tr><td class="symbol">♍</td><td>乙女座</td><td class="symbol">♓</td><td>魚座</td></tr>
+  </table>
+
+  <h3>ハウス（室）</h3>
+  <p>12の人生領域を表します。天体がどのハウスにあるかで、そのエネルギーが発揮される分野がわかります。</p>
+  <table>
+    <tr><th>室</th><th>テーマ</th><th>キーワード</th></tr>
+    <tr><td>1室</td><td>自己</td><td>外見、第一印象、自己表現</td></tr>
+    <tr><td>2室</td><td>所有</td><td>お金、才能、価値観</td></tr>
+    <tr><td>3室</td><td>知性</td><td>コミュニケーション、学習、兄弟姉妹</td></tr>
+    <tr><td>4室</td><td>家庭</td><td>家、家族、ルーツ、心の拠り所</td></tr>
+    <tr><td>5室</td><td>創造</td><td>恋愛、趣味、子ども、自己表現</td></tr>
+    <tr><td>6室</td><td>労働</td><td>仕事、健康、日常習慣、奉仕</td></tr>
+    <tr><td>7室</td><td>対人</td><td>パートナーシップ、結婚、契約</td></tr>
+    <tr><td>8室</td><td>変容</td><td>深い絆、相続、生と死、性</td></tr>
+    <tr><td>9室</td><td>探求</td><td>哲学、高等教育、海外、宗教</td></tr>
+    <tr><td>10室</td><td>社会</td><td>キャリア、社会的地位、天職</td></tr>
+    <tr><td>11室</td><td>友愛</td><td>友人、グループ、未来のビジョン</td></tr>
+    <tr><td>12室</td><td>潜在</td><td>無意識、秘密、癒し、スピリチュアル</td></tr>
+  </table>
+
+  <h3>アスペクト</h3>
+  <table>
+    <tr><th>記号</th><th>名前</th><th>角度</th><th>意味</th></tr>
+    <tr><td class="symbol">☌</td><td>コンジャンクション</td><td>0°</td><td>融合・強調</td></tr>
+    <tr><td class="symbol">⚹</td><td>セクスタイル</td><td>60°</td><td>穏やかな調和</td></tr>
+    <tr><td class="symbol">□</td><td>スクエア</td><td>90°</td><td>緊張・葛藤・成長</td></tr>
+    <tr><td class="symbol">△</td><td>トライン</td><td>120°</td><td>自然な調和・才能</td></tr>
+    <tr><td class="symbol">☍</td><td>オポジション</td><td>180°</td><td>対立・補完</td></tr>
+  </table>
+
+  <h3>その他の記号</h3>
+  <table>
+    <tr><th>表記</th><th>意味</th></tr>
+    <tr><td><code>R</code></td><td>逆行中（地球から見て後退して見える状態）</td></tr>
+    <tr><td><code>ASC</code></td><td>アセンダント（東の地平線の星座）</td></tr>
+    <tr><td><code>MC</code></td><td>ミッドヘブン（天頂の星座）</td></tr>
+  </table>
+
+  <h3>オーブについて</h3>
+  <p>アスペクトは正確な角度でなくても、許容範囲（オーブ）内なら成立とみなします。</p>
+  <ul>
+    <li><strong>ネイタル / リターン系</strong>: 5°</li>
+    <li><strong>トランジット / 年間概要</strong>: 1°（より厳密に）</li>
+    <li><strong>シナストリー</strong>: 3°</li>
+  </ul>
+  <p>オーブが狭いほど影響は強く、広いほど弱まります。</p>
+
+  <h2>LLMへのプロンプト例</h2>
+
+  <h3>基本の聞き方</h3>
+  <div class="prompt-box">
+    <strong>ネイタル</strong>
+    <p>「私の性格や傾向を教えてください」</p>
+    <p>「太陽と月の組み合わせから、私の基本的な性質を解説してください」</p>
+  </div>
+  <div class="prompt-box">
+    <strong>年間概要</strong>
+    <p>「この1年の運勢の流れを教えてください」</p>
+    <p>「特に注意すべき時期や、チャンスの時期を教えてください」</p>
+  </div>
+  <div class="prompt-box">
+    <strong>トランジット</strong>
+    <p>「この日の運勢を教えてください」</p>
+    <p>「仕事運／恋愛運に絞って解釈してください」</p>
+  </div>
+  <div class="prompt-box">
+    <strong>ルナリターン</strong>
+    <p>「今月のテーマと過ごし方のアドバイスをください」</p>
+  </div>
+  <div class="prompt-box">
+    <strong>ソーラーリターン</strong>
+    <p>「この1年のテーマを教えてください」</p>
+    <p>「仕事面／プライベート面でのポイントを解説してください」</p>
+  </div>
+  <div class="prompt-box">
+    <strong>シナストリー</strong>
+    <p>「この2人の相性を教えてください」</p>
+    <p>「うまく付き合っていくためのアドバイスをください」</p>
+  </div>
+
+  <h3>深掘りしたいとき</h3>
+  <div class="prompt-box">
+    <p>「〇〇（天体）と△△（天体）のアスペクトについて詳しく教えてください」</p>
+    <p>「□室に天体が集中していますが、どういう意味がありますか？」</p>
+    <p>「土星がASCにスクエアを形成していますが、どんな影響がありますか？」</p>
+  </div>
+
+  <h3>複数の出力を組み合わせるとき</h3>
+  <div class="prompt-box">
+    <p>「ネイタルと年間概要を照らし合わせて、私にとってこの1年がどんな年になりそうか教えてください」</p>
+    <p>「ソーラーリターンのチャートとネイタルを比較して、今年特に意識すべきテーマを教えてください」</p>
+    <p>「ネイタルで土星が強調されていますが、今年のトランジット土星とどう関係しますか？」</p>
+  </div>
+
+  <footer style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #ccc; font-size: 0.85rem; color: #666;">
+    <a href="/">← 計算ツールに戻る</a>
+  </footer>
+</body>
+</html>

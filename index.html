@@ -17,6 +17,10 @@
     #status { color: #666; margin-bottom: 1rem; }
     section { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd; scroll-margin-top: 6rem; }
     h2 { margin-top: 0; }
+    .section-info { font-size: 0.85rem; color: #666; margin-bottom: 1rem; }
+    .section-info code { background: #f5f5f5; padding: 0.1rem 0.3rem; border-radius: 3px; }
+    .prompt-example { font-size: 0.85rem; color: #555; background: #f9f9f9; padding: 0.5rem; border-left: 3px solid #ddd; margin-bottom: 1rem; }
+    .prompt-example::before { content: "💡 "; }
   </style>
 </head>
 <body>
@@ -26,6 +30,7 @@
     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-bottom: 0.5rem;">
       <a href="#natal">ネイタル</a>
       <a href="#synastry">シナストリー</a>
+      <a href="/help.html" style="margin-left: auto; color: #666;">使い方</a>
     </div>
     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.9rem;">
       <span style="color: #888;">ネイタル計算後:</span>
@@ -40,6 +45,10 @@
 
   <section id="natal">
     <h2>ネイタル</h2>
+    <div class="section-info">
+      オーブ: <code>5°</code> ／ ハウス: <code>プラシーダス</code>
+    </div>
+    <div class="prompt-example">LLMに渡すときの例 → 「私の性格や傾向を教えてください」</div>
     <div class="row">
       <div>
         <label>年</label>
@@ -84,6 +93,10 @@
 
   <section id="yearly">
     <h2>年間概要</h2>
+    <div class="section-info">
+      オーブ: <code>1°</code>（トランジット）
+    </div>
+    <div class="prompt-example">LLMに渡すときの例 → 「この1年の運勢の流れを教えてください」</div>
     <div class="row">
       <div>
         <label>年</label>
@@ -97,6 +110,10 @@
 
   <section id="transit">
     <h2>トランジット</h2>
+    <div class="section-info">
+      オーブ: <code>1°</code>
+    </div>
+    <div class="prompt-example">LLMに渡すときの例 → 「この日の星の配置を解釈してください」</div>
     <div class="row">
       <div>
         <label>年</label>
@@ -118,6 +135,11 @@
 
   <section id="lunar">
     <h2>ルナリターン</h2>
+    <div class="section-info">
+      オーブ: <code>5°</code> ／ ハウス: <code>プラシーダス</code> ／ 現在地で計算<br>
+      ※月に2回ある場合は両方出力されます
+    </div>
+    <div class="prompt-example">LLMに渡すときの例 → 「このルナリターンから今月のテーマを教えてください」</div>
     <div class="row">
       <div>
         <label>年</label>
@@ -147,6 +169,11 @@
 
   <section id="solar">
     <h2>ソーラーリターン</h2>
+    <div class="section-info">
+      オーブ: <code>5°</code> ／ ハウス: <code>プラシーダス</code> ／ 現在地で計算<br>
+      「チャート」= その瞬間の配置 ／ 「1年間の動き」= 誕生日起点の年間トランジット
+    </div>
+    <div class="prompt-example">LLMに渡すときの例 → 「このソーラーリターンから1年のテーマを教えてください」</div>
     <div class="row">
       <div>
         <label>年</label>
@@ -173,6 +200,10 @@
 
   <section id="synastry">
     <h2>シナストリー</h2>
+    <div class="section-info">
+      オーブ: <code>3°</code>
+    </div>
+    <div class="prompt-example">LLMに渡すときの例 → 「この2人の相性を教えてください」</div>
     <details>
       <summary>Aの情報</summary>
       <div class="row">
@@ -251,6 +282,7 @@
   </section>
 
   <footer style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #ccc; font-size: 0.85rem; color: #666;">
+    <a href="/help.html">使い方・プロンプト例</a> ／ 
     <a href="https://github.com/naoki-wjm/astro-tool">ソースコード (AGPL-3.0)</a>
   </footer>
 
