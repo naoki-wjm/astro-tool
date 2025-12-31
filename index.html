@@ -156,6 +156,85 @@
     <textarea id="solarResult" readonly></textarea>
   </section>
 
+  <section>
+    <h2>シナストリー</h2>
+    <details>
+      <summary>Aの情報</summary>
+      <div class="row">
+        <div>
+          <label>年</label>
+          <input type="number" id="synAYear" value="1990" min="1900" max="2100">
+        </div>
+        <div>
+          <label>月</label>
+          <input type="number" id="synAMonth" value="1" min="1" max="12">
+        </div>
+        <div>
+          <label>日</label>
+          <input type="number" id="synADay" value="1" min="1" max="31">
+        </div>
+        <div>
+          <label>時</label>
+          <input type="number" id="synAHour" value="12" min="0" max="23">
+        </div>
+        <div>
+          <label>分</label>
+          <input type="number" id="synAMinute" value="0" min="0" max="59">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>都道府県</label>
+          <select id="synAPref"></select>
+        </div>
+        <div>
+          <label>市区町村</label>
+          <select id="synACity"></select>
+        </div>
+      </div>
+    </details>
+    <details>
+      <summary>Bの情報</summary>
+      <div class="row">
+        <div>
+          <label>年</label>
+          <input type="number" id="synBYear" value="1990" min="1900" max="2100">
+        </div>
+        <div>
+          <label>月</label>
+          <input type="number" id="synBMonth" value="1" min="1" max="12">
+        </div>
+        <div>
+          <label>日</label>
+          <input type="number" id="synBDay" value="1" min="1" max="31">
+        </div>
+        <div>
+          <label>時</label>
+          <input type="number" id="synBHour" value="12" min="0" max="23">
+        </div>
+        <div>
+          <label>分</label>
+          <input type="number" id="synBMinute" value="0" min="0" max="59">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>都道府県</label>
+          <select id="synBPref"></select>
+        </div>
+        <div>
+          <label>市区町村</label>
+          <select id="synBCity"></select>
+        </div>
+      </div>
+    </details>
+    <div class="row">
+      <button id="calcSynastry">計算</button>
+      <button id="copySynastry">コピー</button>
+    </div>
+    <textarea id="synastryResult" readonly></textarea>
+  </section>
+
   <footer style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #ccc; font-size: 0.85rem; color: #666;">
     <a href="https://github.com/naoki-wjm/astro-tool">ソースコード (AGPL-3.0)</a>
   </footer>

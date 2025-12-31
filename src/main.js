@@ -21,6 +21,7 @@ const SIGNS = ['牡羊','牡牛','双子','蟹','獅子','乙女','天秤','蠍'
 const ASPECT_SYMBOLS = { 0:'☌', 60:'⚹', 90:'□', 120:'△', 180:'☍' };
 const ORB = 5;
 const TRANSIT_ORB = 1;
+const SYNASTRY_ORB = 3;
 
 function fmt(deg) {
   const s = Math.floor(deg / 30);
@@ -623,6 +624,112 @@ function copySolar() {
   document.execCommand('copy');
 }
 
+function calculateSynastry() {
+  if (!swe) return;
+
+  // Aのデータ取得
+  const aYear = parseInt(document.getElementById('synAYear').value);
+  const aMonth = parseInt(document.getElementById('synAMonth').value);
+  const aDay = parseInt(document.getElementById('synADay').value);
+  const aHour = parseInt(document.getElementById('synAHour').value);
+  const aMinute = parseInt(document.getElementById('synAMinute').value);
+  const aPref = document.getElementById('synAPref').value;
+  const aCityName = document.getElementById('synACity').value;
+  const aCity = cities[aPref].find(c => c.name === aCityName);
+  if (!aCity) return;
+
+  // Bのデータ取得
+  const bYear = parseInt(document.getElementById('synBYear').value);
+  const bMonth = parseInt(document.getElementById('synBMonth').value);
+  const bDay = parseInt(document.getElementById('synBDay').value);
+  const bHour = parseInt(document.getElementById('synBHour').value);
+  const bMinute = parseInt(document.getElementById('synBMinute').value);
+  const bPref = document.getElementById('synBPref').value;
+  const bCityName = document.getElementById('synBCity').value;
+  const bCity = cities[bPref].find(c => c.name === bCityName);
+  if (!bCity) return;
+
+  // A計算
+  const aUtcHour = aHour - 9 + aMinute / 60;
+  const aJd = swe.swe_julday(aYear, aMonth, aDay, aUtcHour, 1);
+  const aHouses = swe.swe_houses(aJd, aCity.lat, aCity.lng, 'P');
+  const aPositions = [];
+  for (const [id, name] of PLANETS) {
+    const r = swe.swe_calc_ut(aJd, id, 256);
+    const lon = r[0], spd = r[3];
+    const house = getHouse(lon, aHouses.cusps);
+    aPositions.push({ id, name, lon, spd, house });
+  }
+  const aAngles = { asc: aHouses.ascmc[0], mc: aHouses.ascmc[1] };
+
+  // B計算
+  const bUtcHour = bHour - 9 + bMinute / 60;
+  const bJd = swe.swe_julday(bYear, bMonth, bDay, bUtcHour, 1);
+  const bHouses = swe.swe_houses(bJd, bCity.lat, bCity.lng, 'P');
+  const bPositions = [];
+  for (const [id, name] of PLANETS) {
+    const r = swe.swe_calc_ut(bJd, id, 256);
+    const lon = r[0], spd = r[3];
+    const house = getHouse(lon, bHouses.cusps);
+    bPositions.push({ id, name, lon, spd, house });
+  }
+  const bAngles = { asc: bHouses.ascmc[0], mc: bHouses.ascmc[1] };
+
+  // 出力
+  let output = `【シナストリー】\n\n`;
+
+  output += `■ Aのネイタル（${aYear}-${String(aMonth).padStart(2,'0')}-${String(aDay).padStart(2,'0')}）\n`;
+  output += aPositions.map(p => `${p.name} ${fmtShort(p.lon)}(${p.house}H)`).join(' / ') + '\n';
+  output += `ASC ${fmtShort(aAngles.asc)} / MC ${fmtShort(aAngles.mc)}\n\n`;
+
+  output += `■ Bのネイタル（${bYear}-${String(bMonth).padStart(2,'0')}-${String(bDay).padStart(2,'0')}）\n`;
+  output += bPositions.map(p => `${p.name} ${fmtShort(p.lon)}(${p.house}H)`).join(' / ') + '\n';
+  output += `ASC ${fmtShort(bAngles.asc)} / MC ${fmtShort(bAngles.mc)}\n\n`;
+
+  // 相互アスペクト
+  output += `■ 相互アスペクト\n`;
+  const aspects = [];
+
+  // A天体 × B天体
+  for (const a of aPositions) {
+    for (const b of bPositions) {
+      const asp = getAspect(a.lon, b.lon, SYNASTRY_ORB);
+      if (asp) {
+        aspects.push(`A.${a.name}${asp.symbol}B.${b.name}(${asp.orb.toFixed(1)}°)`);
+      }
+    }
+  }
+
+  // A天体 × B ASC/MC
+  for (const a of aPositions) {
+    const aspAsc = getAspect(a.lon, bAngles.asc, SYNASTRY_ORB);
+    if (aspAsc) aspects.push(`A.${a.name}${aspAsc.symbol}B.ASC(${aspAsc.orb.toFixed(1)}°)`);
+    const aspMc = getAspect(a.lon, bAngles.mc, SYNASTRY_ORB);
+    if (aspMc) aspects.push(`A.${a.name}${aspMc.symbol}B.MC(${aspMc.orb.toFixed(1)}°)`);
+  }
+
+  // B天体 × A ASC/MC
+  for (const b of bPositions) {
+    const aspAsc = getAspect(b.lon, aAngles.asc, SYNASTRY_ORB);
+    if (aspAsc) aspects.push(`B.${b.name}${aspAsc.symbol}A.ASC(${aspAsc.orb.toFixed(1)}°)`);
+    const aspMc = getAspect(b.lon, aAngles.mc, SYNASTRY_ORB);
+    if (aspMc) aspects.push(`B.${b.name}${aspMc.symbol}A.MC(${aspMc.orb.toFixed(1)}°)`);
+  }
+
+  if (aspects.length === 0) {
+    output += 'なし\n';
+  } else {
+    output += aspects.join('\n');
+  }
+
+  document.getElementById('synastryResult').value = output;
+}
+
+function copySynastry() {
+  document.getElementById('synastryResult').select();
+  document.execCommand('copy');
+}
+
 async function init() {
   const prefSelect = document.getElementById('pref');
   const citySelect = document.getElementById('city');
@@ -689,6 +796,50 @@ async function init() {
   });
   srPrefSelect.dispatchEvent(new Event('change'));
 
+  // シナストリーA用
+  const synAPrefSelect = document.getElementById('synAPref');
+  const synACitySelect = document.getElementById('synACity');
+
+  for (const pref of Object.keys(cities)) {
+    const opt = document.createElement('option');
+    opt.value = pref;
+    opt.textContent = pref;
+    synAPrefSelect.appendChild(opt);
+  }
+
+  synAPrefSelect.addEventListener('change', () => {
+    synACitySelect.innerHTML = '';
+    for (const city of cities[synAPrefSelect.value]) {
+      const opt = document.createElement('option');
+      opt.value = city.name;
+      opt.textContent = city.name;
+      synACitySelect.appendChild(opt);
+    }
+  });
+  synAPrefSelect.dispatchEvent(new Event('change'));
+
+  // シナストリーB用
+  const synBPrefSelect = document.getElementById('synBPref');
+  const synBCitySelect = document.getElementById('synBCity');
+
+  for (const pref of Object.keys(cities)) {
+    const opt = document.createElement('option');
+    opt.value = pref;
+    opt.textContent = pref;
+    synBPrefSelect.appendChild(opt);
+  }
+
+  synBPrefSelect.addEventListener('change', () => {
+    synBCitySelect.innerHTML = '';
+    for (const city of cities[synBPrefSelect.value]) {
+      const opt = document.createElement('option');
+      opt.value = city.name;
+      opt.textContent = city.name;
+      synBCitySelect.appendChild(opt);
+    }
+  });
+  synBPrefSelect.dispatchEvent(new Event('change'));
+
   document.getElementById('calc').addEventListener('click', calculate);
   document.getElementById('copy').addEventListener('click', copyResult);
   document.getElementById('calcYearly').addEventListener('click', calculateYearly);
@@ -700,6 +851,8 @@ async function init() {
   document.getElementById('calcSolarChart').addEventListener('click', calculateSolarChart);
   document.getElementById('calcSolarYear').addEventListener('click', calculateSolarYear);
   document.getElementById('copySolar').addEventListener('click', copySolar);
+  document.getElementById('calcSynastry').addEventListener('click', calculateSynastry);
+  document.getElementById('copySynastry').addEventListener('click', copySynastry);
 
   document.getElementById('status').textContent = '初期化中...';
   swe = await SwissEPH.init();
