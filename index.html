@@ -130,6 +130,31 @@
     <textarea id="lunarResult" readonly></textarea>
   </section>
 
+  <section>
+    <h2>ソーラーリターン</h2>
+    <div class="row">
+      <div>
+        <label>年</label>
+        <input type="number" id="srYear" value="2025" min="1900" max="2100">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>都道府県</label>
+        <select id="srPref"></select>
+      </div>
+      <div>
+        <label>市区町村</label>
+        <select id="srCity"></select>
+      </div>
+    </div>
+    <div class="row">
+      <button id="calcSolarChart" disabled>チャート</button>
+      <button id="calcSolarYear" disabled>1年間の動き</button>
+      <button id="copySolar" disabled>コピー</button>
+    </div>
+    <textarea id="solarResult" readonly></textarea>
+  </section>
 
   <footer style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #ccc; font-size: 0.85rem; color: #666;">
     <a href="https://github.com/naoki-wjm/astro-tool">ソースコード (AGPL-3.0)</a>

@@ -19,8 +19,8 @@ const OUTER_PLANETS = [
 const TRANSIT_PLANETS = [[5,'木星'], [6,'土星'], [7,'天王星'], [8,'海王星'], [9,'冥王星']];
 const SIGNS = ['牡羊','牡牛','双子','蟹','獅子','乙女','天秤','蠍','射手','山羊','水瓶','魚'];
 const ASPECT_SYMBOLS = { 0:'☌', 60:'⚹', 90:'□', 120:'△', 180:'☍' };
-const ORB = 6;
-const TRANSIT_ORB = 2;
+const ORB = 5;
+const TRANSIT_ORB = 1;
 
 function fmt(deg) {
   const s = Math.floor(deg / 30);
@@ -124,13 +124,15 @@ function calculate() {
   natalHouses = houses;
   natalCity = city;
   
-  // 各機能のボタンを有効化
   document.getElementById('calcYearly').disabled = false;
   document.getElementById('copyYearly').disabled = false;
   document.getElementById('calcTransit').disabled = false;
   document.getElementById('copyTransit').disabled = false;
   document.getElementById('calcLunar').disabled = false;
   document.getElementById('copyLunar').disabled = false;
+  document.getElementById('calcSolarChart').disabled = false;
+  document.getElementById('calcSolarYear').disabled = false;
+  document.getElementById('copySolar').disabled = false;
 }
 
 function calculateYearly() {
@@ -146,6 +148,15 @@ function calculateYearly() {
 
   const startJd = swe.swe_julday(year, 1, 1, 0, 1);
   const endJd = swe.swe_julday(year, 12, 31, 0, 1);
+
+  const result = calcYearlyRange(startJd, endJd);
+  output += result;
+
+  document.getElementById('yearlyResult').value = output;
+}
+
+function calcYearlyRange(startJd, endJd) {
+  let output = '';
 
   const retrograde = {};
   for (const [id, name] of OUTER_PLANETS) {
@@ -296,7 +307,7 @@ function calculateYearly() {
   }
   if (!hasTransit) output += `なし\n`;
 
-  document.getElementById('yearlyResult').value = output;
+  return output;
 }
 
 function calculateTransit() {
@@ -306,7 +317,7 @@ function calculateTransit() {
   const month = parseInt(document.getElementById('trMonth').value);
   const day = parseInt(document.getElementById('trDay').value);
 
-  const jd = swe.swe_julday(year, month, day, 12 - 9, 1); // 正午JST
+  const jd = swe.swe_julday(year, month, day, 12 - 9, 1);
 
   let output = `【トランジット】${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}\n\n`;
 
@@ -333,7 +344,6 @@ function calculateTransit() {
         aspects.push(`t.${t.name}${asp.symbol}n.${n.name}(${n.house}H)`);
       }
     }
-    // ASC/MCへのアスペクト
     const aspAsc = getAspect(t.lon, natalAngles.asc, TRANSIT_ORB);
     if (aspAsc) aspects.push(`t.${t.name}${aspAsc.symbol}n.ASC`);
     const aspMc = getAspect(t.lon, natalAngles.mc, TRANSIT_ORB);
@@ -367,7 +377,6 @@ function calculateLunarReturn() {
 
   const returns = [];
 
-  // 6時間刻みで粗く探索
   let prevDiff = null;
   for (; jd < endJd; jd += 0.25) {
     const r = swe.swe_calc_ut(jd, 1, 256);
@@ -376,7 +385,6 @@ function calculateLunarReturn() {
     if (diff < -180) diff += 360;
 
     if (prevDiff !== null && prevDiff < 0 && diff >= 0) {
-      // 二分探索で絞り込む
       let lo = jd - 0.25, hi = jd;
       for (let i = 0; i < 20; i++) {
         const mid = (lo + hi) / 2;
@@ -428,7 +436,6 @@ function calculateLunarReturn() {
 
     output += `\nASC ${fmt(houses.ascmc[0])} / MC ${fmt(houses.ascmc[1])}\n`;
 
-    // ネイタルへのアスペクト
     output += `\n■ ネイタルへのアスペクト\n`;
     const aspects = [];
     for (const [id, name] of PLANETS) {
@@ -461,6 +468,136 @@ function calculateLunarReturn() {
   document.getElementById('lunarResult').value = output;
 }
 
+function findSolarReturn(year) {
+  const natalSun = natalPositions.find(p => p.name === '太陽').lon;
+  
+  // 誕生日付近から探索開始
+  const natalMonth = parseInt(document.getElementById('month').value);
+  const natalDay = parseInt(document.getElementById('day').value);
+  
+  let jd = swe.swe_julday(year, natalMonth, natalDay - 2, 0, 1);
+  const endJd = jd + 5; // 5日間の範囲で探索
+
+  let prevDiff = null;
+  for (; jd < endJd; jd += 0.25) {
+    const r = swe.swe_calc_ut(jd, 0, 256); // 太陽
+    let diff = r[0] - natalSun;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+
+    if (prevDiff !== null && prevDiff < 0 && diff >= 0) {
+      let lo = jd - 0.25, hi = jd;
+      for (let i = 0; i < 20; i++) {
+        const mid = (lo + hi) / 2;
+        const rm = swe.swe_calc_ut(mid, 0, 256);
+        let d = rm[0] - natalSun;
+        if (d > 180) d -= 360;
+        if (d < -180) d += 360;
+        if (d < 0) lo = mid;
+        else hi = mid;
+      }
+      return (lo + hi) / 2;
+    }
+    prevDiff = diff;
+  }
+  return null;
+}
+
+function calculateSolarChart() {
+  if (!swe || !natalPositions) return;
+
+  const year = parseInt(document.getElementById('srYear').value);
+  const pref = document.getElementById('srPref').value;
+  const cityName = document.getElementById('srCity').value;
+
+  const city = cities[pref].find(c => c.name === cityName);
+  if (!city) return;
+
+  const returnJd = findSolarReturn(year);
+  if (!returnJd) {
+    document.getElementById('solarResult').value = `${year}年のソーラーリターンが見つかりませんでした`;
+    return;
+  }
+
+  const natalSun = natalPositions.find(p => p.name === '太陽').lon;
+  const jstJd = returnJd + 9 / 24;
+  const dt = swe.swe_revjul(jstJd, 1);
+  const h = Math.floor(dt.hour);
+  const m = Math.floor((dt.hour - h) * 60);
+
+  let output = `【ソーラーリターン】${dt.year}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} JST\n`;
+  output += `場所: ${pref}${cityName}\n`;
+  output += `ネイタル太陽: ${fmt(natalSun)}\n`;
+  output += `ハウス: プラシーダス\n\n`;
+
+  const houses = swe.swe_houses(returnJd, city.lat, city.lng, 'P');
+
+  output += `■ 天体\n`;
+  for (const [id, name] of PLANETS) {
+    const r = swe.swe_calc_ut(returnJd, id, 256);
+    const lon = r[0], spd = r[3];
+    const house = getHouse(lon, houses.cusps);
+    output += `${name} ${fmt(lon)} (${house}H)${spd < 0 ? ' R' : ''}\n`;
+  }
+
+  output += `\nASC ${fmt(houses.ascmc[0])} / MC ${fmt(houses.ascmc[1])}\n`;
+
+  output += `\n■ ネイタルへのアスペクト\n`;
+  const aspects = [];
+  for (const [id, name] of PLANETS) {
+    const r = swe.swe_calc_ut(returnJd, id, 256);
+    const lon = r[0];
+    
+    for (const n of natalPositions) {
+      const asp = getAspect(lon, n.lon, TRANSIT_ORB);
+      if (asp) {
+        aspects.push(`SR.${name}${asp.symbol}n.${n.name}(${n.house}H)`);
+      }
+    }
+    const aspAsc = getAspect(lon, natalAngles.asc, TRANSIT_ORB);
+    if (aspAsc) aspects.push(`SR.${name}${aspAsc.symbol}n.ASC`);
+    const aspMc = getAspect(lon, natalAngles.mc, TRANSIT_ORB);
+    if (aspMc) aspects.push(`SR.${name}${aspMc.symbol}n.MC`);
+  }
+
+  if (aspects.length === 0) {
+    output += `なし\n`;
+  } else {
+    output += aspects.join(' / ');
+  }
+
+  document.getElementById('solarResult').value = output;
+}
+
+function calculateSolarYear() {
+  if (!swe || !natalPositions || !natalAngles) return;
+
+  const year = parseInt(document.getElementById('srYear').value);
+
+  const startJd = findSolarReturn(year);
+  const endJd = findSolarReturn(year + 1);
+
+  if (!startJd || !endJd) {
+    document.getElementById('solarResult').value = `ソーラーリターンの計算に失敗しました`;
+    return;
+  }
+
+  const startDt = swe.swe_revjul(startJd + 9/24, 1);
+  const endDt = swe.swe_revjul(endJd + 9/24, 1);
+
+  let output = `【ソーラーリターン年 天体運行概要】\n`;
+  output += `${startDt.year}/${startDt.month}/${startDt.day} 〜 ${endDt.year}/${endDt.month}/${endDt.day}\n\n`;
+
+  output += `■ ネイタル（参照用）\n`;
+  const natalSummary = natalPositions.map(p => `${p.name} ${fmtShort(p.lon)}(${p.house}H)`).join(' / ');
+  output += `${natalSummary}\n`;
+  output += `ASC ${fmtShort(natalAngles.asc)} / MC ${fmtShort(natalAngles.mc)}\n\n`;
+
+  output += calcYearlyRange(startJd, endJd);
+
+  document.getElementById('solarResult').value = output;
+}
+
 function copyResult() {
   document.getElementById('result').select();
   document.execCommand('copy');
@@ -478,6 +615,11 @@ function copyTransit() {
 
 function copyLunar() {
   document.getElementById('lunarResult').select();
+  document.execCommand('copy');
+}
+
+function copySolar() {
+  document.getElementById('solarResult').select();
   document.execCommand('copy');
 }
 
@@ -503,7 +645,7 @@ async function init() {
   });
   prefSelect.dispatchEvent(new Event('change'));
 
-  // ルナリターン用の都道府県プルダウン
+  // ルナリターン用
   const lrPrefSelect = document.getElementById('lrPref');
   const lrCitySelect = document.getElementById('lrCity');
 
@@ -525,6 +667,28 @@ async function init() {
   });
   lrPrefSelect.dispatchEvent(new Event('change'));
 
+  // ソーラーリターン用
+  const srPrefSelect = document.getElementById('srPref');
+  const srCitySelect = document.getElementById('srCity');
+
+  for (const pref of Object.keys(cities)) {
+    const opt = document.createElement('option');
+    opt.value = pref;
+    opt.textContent = pref;
+    srPrefSelect.appendChild(opt);
+  }
+
+  srPrefSelect.addEventListener('change', () => {
+    srCitySelect.innerHTML = '';
+    for (const city of cities[srPrefSelect.value]) {
+      const opt = document.createElement('option');
+      opt.value = city.name;
+      opt.textContent = city.name;
+      srCitySelect.appendChild(opt);
+    }
+  });
+  srPrefSelect.dispatchEvent(new Event('change'));
+
   document.getElementById('calc').addEventListener('click', calculate);
   document.getElementById('copy').addEventListener('click', copyResult);
   document.getElementById('calcYearly').addEventListener('click', calculateYearly);
@@ -533,6 +697,9 @@ async function init() {
   document.getElementById('copyTransit').addEventListener('click', copyTransit);
   document.getElementById('calcLunar').addEventListener('click', calculateLunarReturn);
   document.getElementById('copyLunar').addEventListener('click', copyLunar);
+  document.getElementById('calcSolarChart').addEventListener('click', calculateSolarChart);
+  document.getElementById('calcSolarYear').addEventListener('click', calculateSolarYear);
+  document.getElementById('copySolar').addEventListener('click', copySolar);
 
   document.getElementById('status').textContent = '初期化中...';
   swe = await SwissEPH.init();
