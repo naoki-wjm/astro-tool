@@ -599,29 +599,39 @@ function calculateSolarYear() {
   document.getElementById('solarResult').value = output;
 }
 
-function copyResult() {
-  document.getElementById('result').select();
+function copyWithFeedback(textareaId, buttonId) {
+  const textarea = document.getElementById(textareaId);
+  const button = document.getElementById(buttonId);
+  textarea.select();
   document.execCommand('copy');
+  
+  const originalText = button.textContent;
+  button.textContent = 'コピーしました';
+  button.disabled = true;
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.disabled = false;
+  }, 1500);
+}
+
+function copyResult() {
+  copyWithFeedback('result', 'copy');
 }
 
 function copyYearly() {
-  document.getElementById('yearlyResult').select();
-  document.execCommand('copy');
+  copyWithFeedback('yearlyResult', 'copyYearly');
 }
 
 function copyTransit() {
-  document.getElementById('transitResult').select();
-  document.execCommand('copy');
+  copyWithFeedback('transitResult', 'copyTransit');
 }
 
 function copyLunar() {
-  document.getElementById('lunarResult').select();
-  document.execCommand('copy');
+  copyWithFeedback('lunarResult', 'copyLunar');
 }
 
 function copySolar() {
-  document.getElementById('solarResult').select();
-  document.execCommand('copy');
+  copyWithFeedback('solarResult', 'copySolar');
 }
 
 function calculateSynastry() {
@@ -726,8 +736,7 @@ function calculateSynastry() {
 }
 
 function copySynastry() {
-  document.getElementById('synastryResult').select();
-  document.execCommand('copy');
+  copyWithFeedback('synastryResult', 'copySynastry');
 }
 
 async function init() {
