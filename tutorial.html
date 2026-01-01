@@ -49,9 +49,9 @@
     .btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
     
     .result-section { margin-top: 2rem; }
-    .result-section textarea { 
+    #resultText { 
       width: 100%; 
-      height: 500px; 
+      height: 300px; 
       font-family: monospace; 
       font-size: 0.85rem;
       padding: 1rem;
@@ -340,7 +340,7 @@
     <div class="copy-instruction">
       <p>↓この文章をコピーして、<strong>Claude</strong>や<strong>ChatGPT</strong>に貼り付けてください。</p>
     </div>
-    <textarea class="result-section" id="resultText" readonly></textarea>
+    <textarea id="resultText" readonly></textarea>
     <button class="btn-copy" id="copyResult">📋 コピーする</button>
     
     <div class="nav-buttons">
