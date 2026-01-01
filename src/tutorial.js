@@ -112,15 +112,15 @@ const questionTexts = {
     friend: 'この2人の友人としての相性を教えてください。良い関係を続けるコツも教えてください。'
   },
   yearly: {
-    general: '私の今年の運勢を教えてください。全体的な流れとポイントをお願いします。',
-    work: '私の今年の仕事運を中心に教えてください。チャンスの時期や注意点も知りたいです。',
-    love: '私の今年の恋愛運を中心に教えてください。良い時期や気をつける時期を教えてください。',
-    caution: '今年、特に注意すべき時期を教えてください。どう乗り越えればいいかも教えてください。'
+    general: '私のこの年の運勢を教えてください。全体的な流れとポイントをお願いします。',
+    work: '私のこの年の仕事運を中心に教えてください。チャンスの時期や注意点も知りたいです。',
+    love: '私のこの年の恋愛運を中心に教えてください。良い時期や気をつける時期を教えてください。',
+    caution: 'この年、特に注意すべき時期を教えてください。どう乗り越えればいいかも教えてください。'
   },
   monthly: {
-    general: '今月のテーマと過ごし方のアドバイスをください。',
-    work: '今月の仕事面でのアドバイスをください。',
-    private: '今月のプライベートでのアドバイスをください。'
+    general: 'この月のテーマと過ごし方のアドバイスをください。',
+    work: 'この月の仕事面でのアドバイスをください。',
+    private: 'この月のプライベートでのアドバイスをください。'
   },
   daily: {
     general: 'この日の運勢を教えてください。',
@@ -260,7 +260,7 @@ function calculateSynastry() {
   const bDay = parseInt(bDayVal);
   let bHour = bTimeUnknown ? 12 : parseInt(bHourVal);
   let bMinute = bTimeUnknown ? 0 : parseInt(bMinuteVal);
-  
+
   const bPref = document.getElementById('personBPref').value;
   const bCityName = document.getElementById('personBCity').value;
   const bCity = cities[bPref].find(c => c.name === bCityName);
