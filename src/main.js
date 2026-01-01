@@ -77,13 +77,13 @@ function calculate() {
   if (!swe) return;
 
   // 入力チェック
-  const year = document.getElementById('year').value;
-  const month = document.getElementById('month').value;
-  const day = document.getElementById('day').value;
-  const hour = document.getElementById('hour').value;
-  const minute = document.getElementById('minute').value;
+  const yearVal = document.getElementById('year').value;
+  const monthVal = document.getElementById('month').value;
+  const dayVal = document.getElementById('day').value;
+  const hourVal = document.getElementById('hour').value;
+  const minuteVal = document.getElementById('minute').value;
 
-  if (!year || !month || !day) {
+  if (!yearVal || !monthVal || !dayVal) {
     alert('生年月日を入力してください');
     return;
   }
@@ -91,6 +91,13 @@ function calculate() {
     alert('出生時刻を入力してください');
     return;
   }
+
+  // 数値変換
+  const year = parseInt(yearVal);
+  const month = parseInt(monthVal);
+  const day = parseInt(dayVal);
+  const hour = parseInt(hourVal);
+  const minute = parseInt(minuteVal);
 
   const pref = document.getElementById('pref').value;
   const cityName = document.getElementById('city').value;
@@ -647,48 +654,62 @@ function copySolar() {
 
 function calculateSynastry() {
   if (!swe) return;
+  
+  // A
+  const aYearVal = document.getElementById('synAYear').value;
+  const aMonthVal = document.getElementById('synAMonth').value;
+  const aDayVal = document.getElementById('synADay').value;
+  const aHourVal = document.getElementById('synAHour').value;
+  const aMinuteVal = document.getElementById('synAMinute').value;
 
-  // 1人目チェック
-  const aYear = document.getElementById('synAYear').value;
-  const aMonth = document.getElementById('synAMonth').value;
-  const aDay = document.getElementById('synADay').value;
-  const aHour = document.getElementById('synAHour').value;
-  const aMinute = document.getElementById('synAMinute').value;
-
-  if (!aYear || !aMonth || !aDay) {
+  // 入力チェック
+  if (!aYearVal || !aMonthVal || !aDayVal) {
     alert('1人目の生年月日を入力してください');
     return;
   }
-  if (aHour === '' || aMinute === '') {
+  if (aHourVal === '' || aMinuteVal === '') {
     alert('1人目の出生時刻を入力してください');
     return;
   }
 
+  // 数値変換
+  const aYear = parseInt(aYearVal);
+  const aMonth = parseInt(aMonthVal);
+  const aDay = parseInt(aDayVal);
+  const aHour = parseInt(aHourVal);
+  const aMinute = parseInt(aMinuteVal);
+
   const aPref = document.getElementById('synAPref').value;
   const aCityName = document.getElementById('synACity').value;
   const aCity = cities[aPref].find(c => c.name === aCityName);
-  if (!aCity) return;
+  
+  // B
+  const bYearVal = document.getElementById('synBYear').value;
+  const bMonthVal = document.getElementById('synBMonth').value;
+  const bDayVal = document.getElementById('synBDay').value;
+  const bHourVal = document.getElementById('synBHour').value;
+  const bMinuteVal = document.getElementById('synBMinute').value;
 
-  // 2人目チェック
-  const bYear = document.getElementById('synBYear').value;
-  const bMonth = document.getElementById('synBMonth').value;
-  const bDay = document.getElementById('synBDay').value;
-  const bHour = document.getElementById('synBHour').value;
-  const bMinute = document.getElementById('synBMinute').value;
-
-  if (!bYear || !bMonth || !bDay) {
+  // 入力チェック
+  if (!bYearVal || !bMonthVal || !bDayVal) {
     alert('2人目の生年月日を入力してください');
     return;
   }
-  if (bHour === '' || bMinute === '') {
+  if (bHourVal === '' || bMinuteVal === '') {
     alert('2人目の出生時刻を入力してください');
     return;
   }
 
+  // 数値変換
+  const bYear = parseInt(bYearVal);
+  const bMonth = parseInt(bMonthVal);
+  const bDay = parseInt(bDayVal);
+  const bHour = parseInt(bHourVal);
+  const bMinute = parseInt(bMinuteVal);
+  
   const bPref = document.getElementById('synBPref').value;
   const bCityName = document.getElementById('synBCity').value;
   const bCity = cities[bPref].find(c => c.name === bCityName);
-  if (!bCity) return;
 
   // A計算
   const aUtcHour = aHour - 9 + aMinute / 60;
