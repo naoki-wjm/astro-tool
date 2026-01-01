@@ -76,11 +76,22 @@ function jdToDateTime(jd) {
 function calculate() {
   if (!swe) return;
 
-  const year = parseInt(document.getElementById('year').value);
-  const month = parseInt(document.getElementById('month').value);
-  const day = parseInt(document.getElementById('day').value);
-  const hour = parseInt(document.getElementById('hour').value);
-  const minute = parseInt(document.getElementById('minute').value);
+  // 入力チェック
+  const year = document.getElementById('year').value;
+  const month = document.getElementById('month').value;
+  const day = document.getElementById('day').value;
+  const hour = document.getElementById('hour').value;
+  const minute = document.getElementById('minute').value;
+
+  if (!year || !month || !day) {
+    alert('生年月日を入力してください');
+    return;
+  }
+  if (hourVal === '' || minuteVal === '') {
+    alert('出生時刻を入力してください');
+    return;
+  }
+
   const pref = document.getElementById('pref').value;
   const cityName = document.getElementById('city').value;
 
@@ -637,23 +648,43 @@ function copySolar() {
 function calculateSynastry() {
   if (!swe) return;
 
-  // Aのデータ取得
-  const aYear = parseInt(document.getElementById('synAYear').value);
-  const aMonth = parseInt(document.getElementById('synAMonth').value);
-  const aDay = parseInt(document.getElementById('synADay').value);
-  const aHour = parseInt(document.getElementById('synAHour').value);
-  const aMinute = parseInt(document.getElementById('synAMinute').value);
+  // 1人目チェック
+  const aYear = document.getElementById('synAYear').value;
+  const aMonth = document.getElementById('synAMonth').value;
+  const aDay = document.getElementById('synADay').value;
+  const aHour = document.getElementById('synAHour').value;
+  const aMinute = document.getElementById('synAMinute').value;
+
+  if (!aYear || !aMonth || !aDay) {
+    alert('1人目の生年月日を入力してください');
+    return;
+  }
+  if (aHour === '' || aMinute === '') {
+    alert('1人目の出生時刻を入力してください');
+    return;
+  }
+
   const aPref = document.getElementById('synAPref').value;
   const aCityName = document.getElementById('synACity').value;
   const aCity = cities[aPref].find(c => c.name === aCityName);
   if (!aCity) return;
 
-  // Bのデータ取得
-  const bYear = parseInt(document.getElementById('synBYear').value);
-  const bMonth = parseInt(document.getElementById('synBMonth').value);
-  const bDay = parseInt(document.getElementById('synBDay').value);
-  const bHour = parseInt(document.getElementById('synBHour').value);
-  const bMinute = parseInt(document.getElementById('synBMinute').value);
+  // 2人目チェック
+  const bYear = document.getElementById('synBYear').value;
+  const bMonth = document.getElementById('synBMonth').value;
+  const bDay = document.getElementById('synBDay').value;
+  const bHour = document.getElementById('synBHour').value;
+  const bMinute = document.getElementById('synBMinute').value;
+
+  if (!bYear || !bMonth || !bDay) {
+    alert('2人目の生年月日を入力してください');
+    return;
+  }
+  if (bHour === '' || bMinute === '') {
+    alert('2人目の出生時刻を入力してください');
+    return;
+  }
+
   const bPref = document.getElementById('synBPref').value;
   const bCityName = document.getElementById('synBCity').value;
   const bCity = cities[bPref].find(c => c.name === bCityName);

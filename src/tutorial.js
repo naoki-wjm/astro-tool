@@ -136,16 +136,29 @@ let currentDetail = null;
 
 // ネイタル計算（戻り値でデータも返す）
 function calculateNatal() {
-  const year = parseInt(document.getElementById('birthYear').value);
-  const month = parseInt(document.getElementById('birthMonth').value);
-  const day = parseInt(document.getElementById('birthDay').value);
-  let hour = parseInt(document.getElementById('birthHour').value);
-  let minute = parseInt(document.getElementById('birthMinute').value);
-  
-  if (document.getElementById('timeUnknown').checked) {
-    hour = 12;
-    minute = 0;
+  const yearVal = document.getElementById('birthYear').value;
+  const monthVal = document.getElementById('birthMonth').value;
+  const dayVal = document.getElementById('birthDay').value;
+  const hourVal = document.getElementById('birthHour').value;
+  const minuteVal = document.getElementById('birthMinute').value;
+  const timeUnknown = document.getElementById('timeUnknown').checked;
+
+  // 入力チェック（parseIntの前に）
+  if (!yearVal || !monthVal || !dayVal) {
+    alert('生年月日を入力してください');
+    return;
   }
+  if (!timeUnknown && (hourVal === '' || minuteVal === '')) {
+    alert('出生時刻を入力してください');
+    return;
+  }
+
+  // 数値変換
+  const year = parseInt(yearVal);
+  const month = parseInt(monthVal);
+  const day = parseInt(dayVal);
+  let hour = timeUnknown ? 12 : parseInt(hourVal);
+  let minute = timeUnknown ? 0 : parseInt(minuteVal);
   
   const pref = document.getElementById('birthPref').value;
   const cityName = document.getElementById('birthCity').value;
@@ -195,23 +208,59 @@ function calculateNatal() {
 // シナストリー計算
 function calculateSynastry() {
   // A
-  const aYear = parseInt(document.getElementById('personAYear').value);
-  const aMonth = parseInt(document.getElementById('personAMonth').value);
-  const aDay = parseInt(document.getElementById('personADay').value);
-  let aHour = parseInt(document.getElementById('personAHour').value);
-  let aMinute = parseInt(document.getElementById('personAMinute').value);
-  if (document.getElementById('personATimeUnknown').checked) { aHour = 12; aMinute = 0; }
+  const aYearVal = document.getElementById('personAYear').value;
+  const aMonthVal = document.getElementById('personAMonth').value;
+  const aDayVal = document.getElementById('personADay').value;
+  const aHourVal = document.getElementById('personAHour').value;
+  const aMinuteVal = document.getElementById('personAMinute').value;
+  const aTimeUnknown = document.getElementById('personATimeUnknown').checked;
+
+  // 入力チェック（parseIntの前に）
+  if (!aYearVal || !aMonthVal || !aDayVal) {
+    alert('1人目の生年月日を入力してください');
+    return;
+  }
+  if (!aTimeUnknown && (aHourVal === '' || aMinuteVal === '')) {
+    alert('1人目の出生時刻を入力してください');
+    return;
+  }
+
+  // 数値変換
+  const aYear = parseInt(aYearVal);
+  const aMonth = parseInt(aMonthVal);
+  const aDay = parseInt(aDayVal);
+  let aHour = aTimeUnknown ? 12 : parseInt(aHourVal);
+  let aMinute = aTimeUnknown ? 0 : parseInt(aMinuteVal);
+
   const aPref = document.getElementById('personAPref').value;
   const aCityName = document.getElementById('personACity').value;
   const aCity = cities[aPref].find(c => c.name === aCityName);
   
   // B
-  const bYear = parseInt(document.getElementById('personBYear').value);
-  const bMonth = parseInt(document.getElementById('personBMonth').value);
-  const bDay = parseInt(document.getElementById('personBDay').value);
-  let bHour = parseInt(document.getElementById('personBHour').value);
-  let bMinute = parseInt(document.getElementById('personBMinute').value);
-  if (document.getElementById('personBTimeUnknown').checked) { bHour = 12; bMinute = 0; }
+  const bYearVal = document.getElementById('personBYear').value;
+  const bMonthVal = document.getElementById('personBMonth').value;
+  const bDayVal = document.getElementById('personBDay').value;
+  const bHourVal = document.getElementById('personBHour').value;
+  const bMinuteVal = document.getElementById('personBMinute').value;
+  const bTimeUnknown = document.getElementById('personBTimeUnknown').checked;
+
+  // 入力チェック（parseIntの前に）
+  if (!bYearVal || !bMonthVal || !bDayVal) {
+    alert('2人目の生年月日を入力してください');
+    return;
+  }
+  if (!bTimeUnknown && (bHourVal === '' || bMinuteVal === '')) {
+    alert('2人目の出生時刻を入力してください');
+    return;
+  }
+
+  // 数値変換
+  const bYear = parseInt(bYearVal);
+  const bMonth = parseInt(bMonthVal);
+  const bDay = parseInt(bDayVal);
+  let bHour = bTimeUnknown ? 12 : parseInt(bHourVal);
+  let bMinute = bTimeUnknown ? 0 : parseInt(bMinuteVal);
+  
   const bPref = document.getElementById('personBPref').value;
   const bCityName = document.getElementById('personBCity').value;
   const bCity = cities[bPref].find(c => c.name === bCityName);
