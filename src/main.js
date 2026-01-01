@@ -863,6 +863,27 @@ async function init() {
   document.getElementById('calcSynastry').addEventListener('click', calculateSynastry);
   document.getElementById('copySynastry').addEventListener('click', copySynastry);
 
+  // 今日の日付をデフォルト値に設定
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const thisMonth = now.getMonth() + 1;
+  const today = now.getDate();
+
+  // 年間概要
+  document.getElementById('transitYear').value = thisYear;
+  
+  // トランジット
+  document.getElementById('trYear').value = thisYear;
+  document.getElementById('trMonth').value = thisMonth;
+  document.getElementById('trDay').value = today;
+  
+  // ルナリターン
+  document.getElementById('lrYear').value = thisYear;
+  document.getElementById('lrMonth').value = thisMonth;
+  
+  // ソーラーリターン
+  document.getElementById('srYear').value = thisYear;
+
   document.getElementById('status').textContent = '初期化中...';
   swe = await SwissEPH.init();
   await swe.swe_set_ephe_path();
