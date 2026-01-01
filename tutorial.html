@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>はじめての占星術 - 占星術計算ツール</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; line-height: 1.7; }
+    h1 { font-size: 1.5rem; }
+    .step { display: none; }
+    .step.active { display: block; }
+    .question { font-size: 1.1rem; font-weight: bold; margin-bottom: 1rem; }
+    .options { display: flex; flex-direction: column; gap: 0.5rem; }
+    .options label { 
+      display: block; 
+      padding: 1rem; 
+      border: 2px solid #ddd; 
+      border-radius: 8px; 
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .options label:hover { border-color: #888; }
+    .options input[type="radio"] { margin-right: 0.5rem; }
+    .options input[type="radio"]:checked + span { font-weight: bold; }
+    .options label:has(input:checked) { border-color: #333; background: #f9f9f9; }
+    
+    .form-section { margin-top: 1.5rem; }
+    .form-section h3 { font-size: 1rem; margin-bottom: 0.75rem; color: #555; }
+    .form-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: end; }
+    .form-row > div { display: flex; flex-direction: column; gap: 0.25rem; }
+    .form-row label { font-size: 0.85rem; color: #666; }
+    .form-row input, .form-row select { padding: 0.5rem; font-size: 1rem; }
+    .form-row input[type="number"] { width: 5rem; }
+    .form-row select { min-width: 8rem; }
+    
+    .time-unknown { font-size: 0.9rem; color: #666; margin-top: 0.5rem; }
+    .time-unknown label { cursor: pointer; }
+    
+    .nav-buttons { display: flex; gap: 1rem; margin-top: 2rem; }
+    .nav-buttons button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+    }
+    .btn-back { background: #eee; }
+    .btn-next { background: #333; color: white; }
+    .btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .result-section { margin-top: 2rem; }
+    .result-section textarea { 
+      width: 100%; 
+      height: 300px; 
+      font-family: monospace; 
+      font-size: 0.85rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+    .copy-instruction {
+      background: #e8f4e8;
+      border: 1px solid #4a4;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .copy-instruction p { margin: 0; }
+    .btn-copy {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.75rem 2rem;
+      background: #4a4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    
+    #status { color: #666; margin-bottom: 1rem; }
+    .back-link { margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .back-link a { color: #666; }
+    
+    .person-section { 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      padding: 1rem; 
+      margin-bottom: 1rem;
+    }
+    .person-section h4 { margin: 0 0 1rem 0; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="back-link"><a href="/">← 通常版に戻る</a></div>
+  
+  <h1>🔮 はじめての占星術</h1>
+  <p>質問に答えていくと、AIに聞くための文章が完成します。</p>
+  
+  <div id="status">読み込み中...</div>
+  
+  <!-- Step 1: 何を知りたい？ -->
+  <div class="step active" id="step1">
+    <p class="question">何について知りたいですか？</p>
+    <div class="options">
+      <label>
+        <input type="radio" name="category" value="personality">
+        <span>自分の性格・強み・向いていること</span>
+      </label>
+      <label>
+        <input type="radio" name="category" value="compatibility">
+        <span>誰かとの相性</span>
+      </label>
+      <label>
+        <input type="radio" name="category" value="yearly">
+        <span>今年の流れ</span>
+      </label>
+      <label>
+        <input type="radio" name="category" value="monthly">
+        <span>今月の流れ</span>
+      </label>
+      <label>
+        <input type="radio" name="category" value="daily">
+        <span>特定の日の運勢</span>
+      </label>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn-next" id="toStep2" disabled>次へ →</button>
+    </div>
+  </div>
+  
+  <!-- Step 2: 詳細選択 -->
+  <div class="step" id="step2">
+    <p class="question" id="step2Question">詳しく教えてください</p>
+    <div class="options" id="step2Options">
+      <!-- JSで動的に生成 -->
+    </div>
+    <div class="nav-buttons">
+      <button class="btn-back" id="backTo1">← 戻る</button>
+      <button class="btn-next" id="toStep3" disabled>次へ →</button>
+    </div>
+  </div>
+  
+  <!-- Step 3: 入力フォーム -->
+  <div class="step" id="step3">
+    <p class="question">情報を入力してください</p>
+    
+    <!-- 自分の情報（相性以外） -->
+    <div id="selfForm" class="form-section">
+      <h3>あなたの情報</h3>
+      <div class="form-row">
+        <div>
+          <label>生まれた年</label>
+          <input type="number" id="birthYear" value="1990" min="1900" max="2100">
+        </div>
+        <div>
+          <label>月</label>
+          <input type="number" id="birthMonth" value="1" min="1" max="12">
+        </div>
+        <div>
+          <label>日</label>
+          <input type="number" id="birthDay" value="1" min="1" max="31">
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>生まれた時刻</label>
+          <input type="number" id="birthHour" value="12" min="0" max="23">
+        </div>
+        <div>
+          <label>分</label>
+          <input type="number" id="birthMinute" value="0" min="0" max="59">
+        </div>
+      </div>
+      <div class="time-unknown">
+        <label><input type="checkbox" id="timeUnknown"> 時刻が分からない（12時で計算します）</label>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>生まれた都道府県</label>
+          <select id="birthPref"></select>
+        </div>
+        <div>
+          <label>市区町村</label>
+          <select id="birthCity"></select>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 相性用：2人分 -->
+    <div id="compatibilityForm" class="form-section" style="display: none;">
+      <div class="person-section">
+        <h4>1人目（あなた）</h4>
+        <div class="form-row">
+          <div>
+            <label>生まれた年</label>
+            <input type="number" id="personAYear" value="1990" min="1900" max="2100">
+          </div>
+          <div>
+            <label>月</label>
+            <input type="number" id="personAMonth" value="1" min="1" max="12">
+          </div>
+          <div>
+            <label>日</label>
+            <input type="number" id="personADay" value="1" min="1" max="31">
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>生まれた時刻</label>
+            <input type="number" id="personAHour" value="12" min="0" max="23">
+          </div>
+          <div>
+            <label>分</label>
+            <input type="number" id="personAMinute" value="0" min="0" max="59">
+          </div>
+        </div>
+        <div class="time-unknown">
+          <label><input type="checkbox" id="personATimeUnknown"> 時刻が分からない</label>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>生まれた都道府県</label>
+            <select id="personAPref"></select>
+          </div>
+          <div>
+            <label>市区町村</label>
+            <select id="personACity"></select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="person-section">
+        <h4>2人目（相手）</h4>
+        <div class="form-row">
+          <div>
+            <label>生まれた年</label>
+            <input type="number" id="personBYear" value="1990" min="1900" max="2100">
+          </div>
+          <div>
+            <label>月</label>
+            <input type="number" id="personBMonth" value="1" min="1" max="12">
+          </div>
+          <div>
+            <label>日</label>
+            <input type="number" id="personBDay" value="1" min="1" max="31">
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>生まれた時刻</label>
+            <input type="number" id="personBHour" value="12" min="0" max="23">
+          </div>
+          <div>
+            <label>分</label>
+            <input type="number" id="personBMinute" value="0" min="0" max="59">
+          </div>
+        </div>
+        <div class="time-unknown">
+          <label><input type="checkbox" id="personBTimeUnknown"> 時刻が分からない</label>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>生まれた都道府県</label>
+            <select id="personBPref"></select>
+          </div>
+          <div>
+            <label>市区町村</label>
+            <select id="personBCity"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 年選択（今年の流れ） -->
+    <div id="yearForm" class="form-section" style="display: none;">
+      <h3>何年の運勢？</h3>
+      <div class="form-row">
+        <div>
+          <label>年</label>
+          <input type="number" id="targetYear" value="2025" min="1900" max="2100">
+        </div>
+      </div>
+    </div>
+    
+    <!-- 年月選択（今月の流れ）+ 現在地 -->
+    <div id="monthForm" class="form-section" style="display: none;">
+      <h3>何年何月の運勢？</h3>
+      <div class="form-row">
+        <div>
+          <label>年</label>
+          <input type="number" id="targetMonthYear" value="2025" min="1900" max="2100">
+        </div>
+        <div>
+          <label>月</label>
+          <input type="number" id="targetMonth" value="1" min="1" max="12">
+        </div>
+      </div>
+      <h3>今いる場所</h3>
+      <div class="form-row">
+        <div>
+          <label>都道府県</label>
+          <select id="currentPref"></select>
+        </div>
+        <div>
+          <label>市区町村</label>
+          <select id="currentCity"></select>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 日付選択（特定の日） -->
+    <div id="dayForm" class="form-section" style="display: none;">
+      <h3>何日の運勢？</h3>
+      <div class="form-row">
+        <div>
+          <label>年</label>
+          <input type="number" id="targetDayYear" value="2025" min="1900" max="2100">
+        </div>
+        <div>
+          <label>月</label>
+          <input type="number" id="targetDayMonth" value="1" min="1" max="12">
+        </div>
+        <div>
+          <label>日</label>
+          <input type="number" id="targetDayDay" value="1" min="1" max="31">
+        </div>
+      </div>
+    </div>
+    
+    <div class="nav-buttons">
+      <button class="btn-back" id="backTo2">← 戻る</button>
+      <button class="btn-next" id="calculate">占う ✨</button>
+    </div>
+  </div>
+  
+  <!-- Step 4: 結果 -->
+  <div class="step" id="step4">
+    <p class="question">完成！</p>
+    <div class="copy-instruction">
+      <p>↓この文章をコピーして、<strong>Claude</strong>や<strong>ChatGPT</strong>に貼り付けてください。</p>
+    </div>
+    <textarea id="resultText" readonly></textarea>
+    <button class="btn-copy" id="copyResult">📋 コピーする</button>
+    
+    <div class="nav-buttons">
+      <button class="btn-back" id="backTo3">← 入力に戻る</button>
+      <button class="btn-back" id="restart">最初からやり直す</button>
+    </div>
+  </div>
+  
+  <footer style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #ccc; font-size: 0.85rem; color: #666;">
+    <a href="/">通常版を使う</a> ／ 
+    <a href="/help.html">詳しい使い方</a> ／
+    <a href="https://github.com/naoki-wjm/astro-tool">ソースコード (AGPL-3.0)</a>
+  </footer>
+
+  <script type="module" src="/src/tutorial.js"></script>
+</body>
+</html>
