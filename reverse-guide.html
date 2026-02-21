@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>逆引きガイド — astro-tool</title>
+<meta name="description" content="キャラクターの性格から天体サインを絞り込み、逆引きホロスコープで誕生日候補を探すためのガイド。">
+<meta property="og:title" content="逆引きガイド — astro-tool">
+<meta property="og:description" content="キャラクターの性格から天体サインを絞り込み、逆引きホロスコープで誕生日候補を探すためのガイド。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://astro-tool-nine.vercel.app/reverse-guide.html">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="逆引きガイド — astro-tool">
+<meta name="twitter:description" content="キャラクターの性格から天体サインを絞り込み、逆引きホロスコープで誕生日候補を探すためのガイド。">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --bg-deep: #0e0e1a;
+    --bg-card: #1c1c30;
+    --bg-input: #252540;
+    --border: #444466;
+    --border-glow: #7a6abb;
+    --text: #eae8f2;
+    --text-dim: #b0adc4;
+    --text-bright: #ffffff;
+    --gold: #e8c860;
+    --gold-dim: #c8a848;
+    --purple: #aa8ee8;
+    --purple-dim: #6650a0;
+    --sign-fire: #e88070;
+    --sign-earth: #88c478;
+    --sign-air: #78b0e0;
+    --sign-water: #7888e0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(74, 58, 122, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(90, 60, 140, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(201, 168, 76, 0.03) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* -- Header -- */
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-size: 1.8rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+  }
+
+  header p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+
+  header .subtitle {
+    margin-top: 0.8rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* -- Section titles -- */
+  .section-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* -- Route choice (initial fork) -- */
+  #routeChoice {
+    margin-bottom: 2rem;
+  }
+
+  .route-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .route-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .route-card:hover {
+    border-color: var(--border-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(122, 106, 187, 0.15);
+  }
+
+  .route-card.selected {
+    border-color: var(--purple);
+    background: rgba(170, 142, 232, 0.08);
+  }
+
+  .route-card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
+    display: block;
+  }
+
+  .route-card-title {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--text-bright);
+    margin-bottom: 0.5rem;
+  }
+
+  .route-card-desc {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* -- Route A: Prompt display -- */
+  #routeA {
+    display: none;
+  }
+
+  .prompt-display {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .prompt-text {
+    font-size: 0.82rem;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+    font-family: 'Noto Sans JP', sans-serif;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .prompt-text::-webkit-scrollbar {
+    width: 6px;
+  }
+  .prompt-text::-webkit-scrollbar-track {
+    background: var(--bg-input);
+    border-radius: 3px;
+  }
+  .prompt-text::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.5rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--bg-deep);
+    background: linear-gradient(135deg, var(--gold), #d4b85c);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(201, 168, 76, 0.3);
+  }
+
+  .copy-btn.copied {
+    background: linear-gradient(135deg, #88c478, #6aa85a);
+  }
+
+  .prompt-instructions {
+    margin-top: 1.5rem;
+    padding: 1rem 1.2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  .prompt-instructions ol {
+    margin-left: 1.2rem;
+    margin-top: 0.5rem;
+  }
+
+  .prompt-instructions li {
+    margin-bottom: 0.3rem;
+  }
+
+  /* -- Route B: Wizard -- */
+  #routeB {
+    display: none;
+  }
+
+  .wizard-progress {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .wizard-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+  }
+
+  .wizard-dot.active {
+    background: var(--gold);
+    box-shadow: 0 0 8px rgba(232, 200, 96, 0.4);
+  }
+
+  .wizard-dot.done {
+    background: var(--purple);
+  }
+
+  .wizard-step {
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .wizard-step.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-label {
+    font-size: 0.78rem;
+    color: var(--purple);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.3rem;
+  }
+
+  .question-text {
+    font-size: 1.05rem;
+    font-weight: 400;
+    color: var(--text-bright);
+    margin-bottom: 1.2rem;
+    line-height: 1.6;
+  }
+
+  .choice-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .choice-btn {
+    display: block;
+    width: 100%;
+    padding: 0.9rem 1.2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 300;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1.5;
+  }
+
+  .choice-btn:hover {
+    border-color: var(--border-glow);
+    background: var(--bg-input);
+  }
+
+  .choice-btn .choice-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 0.2rem;
+  }
+
+  /* Element color hints on choice buttons */
+  .choice-btn[data-element="fire"] { border-left: 3px solid var(--sign-fire); }
+  .choice-btn[data-element="earth"] { border-left: 3px solid var(--sign-earth); }
+  .choice-btn[data-element="air"] { border-left: 3px solid var(--sign-air); }
+  .choice-btn[data-element="water"] { border-left: 3px solid var(--sign-water); }
+
+  /* -- Wizard: back button -- */
+  .wizard-nav {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 1.5rem;
+  }
+
+  .back-btn {
+    padding: 0.4rem 1rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .back-btn:hover {
+    border-color: var(--border-glow);
+    color: var(--text);
+  }
+
+  /* -- Result -- */
+  #wizardResult {
+    display: none;
+  }
+
+  .result-summary-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .result-sign-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(68, 68, 102, 0.4);
+    font-size: 0.9rem;
+  }
+
+  .result-sign-row:last-child {
+    border-bottom: none;
+  }
+
+  .result-planet-label {
+    color: var(--text-dim);
+    min-width: 80px;
+  }
+
+  .result-sign-value {
+    color: var(--gold);
+    font-weight: 400;
+  }
+
+  .result-priority {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  .constraint-warning {
+    background: rgba(232, 128, 112, 0.1);
+    border: 1px solid rgba(232, 128, 112, 0.3);
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+
+  .constraint-warning-title {
+    color: var(--sign-fire);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .constraint-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.8rem;
+  }
+
+  .constraint-choice-btn {
+    padding: 0.6rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+
+  .constraint-choice-btn:hover {
+    border-color: var(--border-glow);
+    background: var(--bg-input);
+  }
+
+  .search-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 2.5rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--bg-deep);
+    background: linear-gradient(135deg, var(--gold), #d4b85c);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+  }
+
+  .search-link-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(201, 168, 76, 0.3);
+  }
+
+  .restart-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.5rem 1.2rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: 1rem;
+  }
+
+  .restart-btn:hover {
+    border-color: var(--border-glow);
+    color: var(--text);
+  }
+
+  .result-actions {
+    text-align: center;
+    margin-top: 1.5rem;
+  }
+
+  /* -- Footer -- */
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  footer a {
+    color: var(--purple);
+    text-decoration: none;
+  }
+
+  /* -- Responsive -- */
+  @media (max-width: 600px) {
+    .container { padding: 1.2rem 1rem 3rem; }
+    header h1 { font-size: 1.4rem; }
+    .route-cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>✦ Reverse Horoscope Guide ✦</h1>
+    <p>逆引きガイド — キャラクターの性格からサインを絞り込む</p>
+    <div class="subtitle">
+      天体のサインが決まっていない場合に、性格や行動パターンから候補を絞り込みます。<br>
+      結果はそのまま<a href="./reverse.html" style="color:var(--purple);">逆引きホロスコープ</a>に引き継げます。
+    </div>
+  </header>
+
+  <!-- ===== Route choice ===== -->
+  <div id="routeChoice">
+    <div class="section-title">キャラクターの小説本文はありますか？</div>
+    <div class="route-cards">
+      <div class="route-card" id="cardRouteA">
+        <span class="route-card-icon">📝</span>
+        <div class="route-card-title">本文がある</div>
+        <div class="route-card-desc">
+          LLMに本文を読ませて<br>天体サインを推測させる<br>プロンプトを生成します
+        </div>
+      </div>
+      <div class="route-card" id="cardRouteB">
+        <span class="route-card-icon">💬</span>
+        <div class="route-card-title">本文がない</div>
+        <div class="route-card-desc">
+          キャラクターについての<br>質問に答えて<br>サインを絞り込みます
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Route A: Prompt ===== -->
+  <div id="routeA">
+    <div class="section-title">LLM用プロンプト</div>
+    <p style="font-size:0.82rem; color:var(--text-dim); margin-bottom:1rem;">
+      以下のプロンプトをコピーして、お手元のLLM（Claude、ChatGPTなど）に貼り付けてください。<br>
+      プロンプト末尾の指示に従い、小説の本文を追加してください。
+    </p>
+    <div class="prompt-display">
+      <div class="prompt-text" id="promptText"></div>
+    </div>
+    <div style="text-align:center;">
+      <button class="copy-btn" id="copyBtn">📋 プロンプトをコピー</button>
+    </div>
+
+    <div class="prompt-instructions">
+      <strong>使い方</strong>
+      <ol>
+        <li>上のプロンプトをコピー</li>
+        <li>お手元のLLMに貼り付け</li>
+        <li>プロンプト末尾に小説の本文を追加</li>
+        <li>LLMが推測した天体サインを <a href="./reverse.html" style="color:var(--purple);">逆引きホロスコープ</a> に入力</li>
+        <li>候補日が出たら、残りの天体も眺めてキャラクターとの一致を楽しんでください</li>
+      </ol>
+    </div>
+
+    <div style="text-align:center; margin-top:1.5rem;">
+      <button class="back-btn" id="routeABack">← 戻る</button>
+    </div>
+  </div>
+
+  <!-- ===== Route B: Wizard ===== -->
+  <div id="routeB">
+    <div class="wizard-progress" id="wizardProgress"></div>
+
+    <div id="wizardSteps"></div>
+
+    <div class="wizard-nav" id="wizardNav" style="display:none;">
+      <button class="back-btn" id="wizardBack">← 前の質問に戻る</button>
+    </div>
+  </div>
+
+  <!-- ===== Result ===== -->
+  <div id="wizardResult"></div>
+
+  <footer>
+    計算はすべてブラウザ内で完結します。データはサーバーに送信されません。<br>
+    <a href="./reverse.html">逆引きホロスコープ</a> ｜ <a href="./">astro-tool トップへ戻る</a>
+  </footer>
+
+</div>
+
+<script type="module" src="/src/reverse-guide.js"></script>
+</body>
+</html>

@@ -12,6 +12,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         tutorial: resolve(__dirname, 'tutorial.html'),
         reverse: resolve(__dirname, 'reverse.html'),
+        'reverse-guide': resolve(__dirname, 'reverse-guide.html'),
       },
     },
   },

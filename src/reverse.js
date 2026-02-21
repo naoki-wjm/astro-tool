@@ -70,6 +70,7 @@ async function initWasm() {
     statusEl.style.display = 'none';
     formEl.style.display = 'block';
     buildPlanetGrid();
+    applyUrlParams();
     $('searchBtn').addEventListener('click', startSearch);
   } catch (err) {
     console.error('WASM load error:', err);
@@ -156,6 +157,42 @@ function getPriority(planetId) {
   const row = document.querySelector(`.planet-row[data-planet-id="${planetId}"]`);
   const activeBtn = row.querySelector('.priority-btn.active');
   return activeBtn ? activeBtn.dataset.priority : 'required';
+}
+
+// ============================================================
+// Apply URL parameters (from reverse-guide.html)
+// ============================================================
+const URL_PARAM_MAP = {
+  sun: 0, moon: 1, mercury: 2, venus: 3, mars: 4,
+  jupiter: 5, saturn: 6, uranus: 7, neptune: 8, pluto: 9,
+};
+
+function applyUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.size === 0) return;
+
+  let applied = false;
+  for (const [key, planetId] of Object.entries(URL_PARAM_MAP)) {
+    const signValue = params.get(key);
+    if (signValue !== null) {
+      const select = $(`sign-${planetId}`);
+      if (select) {
+        select.value = signValue;
+        applied = true;
+      }
+    }
+
+    // Priority
+    const priorityValue = params.get(`p_${key}`);
+    if (priorityValue === 'required' || priorityValue === 'optional') {
+      setPriority(planetId, priorityValue);
+    }
+  }
+
+  // Clear URL params after applying (clean URL)
+  if (applied) {
+    window.history.replaceState({}, '', window.location.pathname);
+  }
 }
 
 // ============================================================
