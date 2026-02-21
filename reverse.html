@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>逆引きホロスコープ — astro-tool</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --bg-deep: #0a0a14;
+    --bg-card: #12121f;
+    --bg-input: #1a1a2e;
+    --border: #2a2a44;
+    --border-glow: #4a3a7a;
+    --text: #d4d0e0;
+    --text-dim: #7a7690;
+    --text-bright: #eeeaf6;
+    --gold: #c9a84c;
+    --gold-dim: #8a7030;
+    --purple: #7c5cbf;
+    --purple-dim: #4a3570;
+    --sign-fire: #d4634a;
+    --sign-earth: #6a9c5c;
+    --sign-air: #5a8cb8;
+    --sign-water: #5a6ab8;
+    --match-full: #c9a84c;
+    --match-high: #8ab85a;
+    --match-mid: #5a8cb8;
+    --match-low: #7a7690;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(74, 58, 122, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(90, 60, 140, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(201, 168, 76, 0.03) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* -- Header -- */
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-size: 1.8rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+  }
+
+  header p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+
+  header .subtitle {
+    margin-top: 0.8rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* -- Sections -- */
+  .section {
+    margin-bottom: 2rem;
+  }
+
+  .section-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* -- Planet rows -- */
+  .planet-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .planet-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 120px;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 0.8rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+
+  .planet-row:hover {
+    border-color: var(--border-glow);
+  }
+
+  .planet-row.required {
+    border-left: 3px solid var(--gold-dim);
+  }
+
+  .planet-name {
+    font-weight: 400;
+    font-size: 0.9rem;
+    color: var(--text-bright);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .planet-symbol {
+    font-size: 1.1rem;
+    width: 1.4rem;
+    text-align: center;
+  }
+
+  .planet-row select {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237a7690'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    padding-right: 1.8rem;
+  }
+
+  .planet-row select:focus {
+    outline: none;
+    border-color: var(--purple);
+  }
+
+  .priority-toggle {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .priority-btn {
+    flex: 1;
+    padding: 0.35rem 0.4rem;
+    font-size: 0.72rem;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-input);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .priority-btn.active {
+    background: var(--purple-dim);
+    border-color: var(--purple);
+    color: var(--text-bright);
+  }
+
+  .priority-btn:hover:not(.active) {
+    border-color: var(--border-glow);
+  }
+
+  /* -- Year range -- */
+  .year-range {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .year-input {
+    width: 120px;
+    padding: 0.5rem 0.7rem;
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .year-input:focus {
+    outline: none;
+    border-color: var(--purple);
+  }
+
+  .year-sep {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+  }
+
+  .year-hint {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    width: 100%;
+    margin-top: 0.3rem;
+  }
+
+  /* -- Search button -- */
+  .search-area {
+    text-align: center;
+    margin: 2rem 0;
+  }
+
+  .search-btn {
+    padding: 0.8rem 3rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--bg-deep);
+    background: linear-gradient(135deg, var(--gold), #d4b85c);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .search-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(201, 168, 76, 0.3);
+  }
+
+  .search-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* -- Progress -- */
+  .progress-area {
+    margin: 1.5rem 0;
+    display: none;
+  }
+
+  .progress-area.active {
+    display: block;
+  }
+
+  .progress-bar-outer {
+    width: 100%;
+    height: 4px;
+    background: var(--bg-input);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--gold));
+    border-radius: 2px;
+    transition: width 0.1s;
+    width: 0%;
+  }
+
+  .progress-text {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 0.4rem;
+  }
+
+  /* -- Results -- */
+  .results-area {
+    display: none;
+  }
+
+  .results-area.active {
+    display: block;
+  }
+
+  .results-summary {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.8rem;
+    transition: border-color 0.2s;
+  }
+
+  .result-card:hover {
+    border-color: var(--border-glow);
+  }
+
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .result-date {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--text-bright);
+  }
+
+  .result-match {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+
+  .match-full { background: rgba(201, 168, 76, 0.2); color: var(--match-full); }
+  .match-high { background: rgba(138, 184, 90, 0.15); color: var(--match-high); }
+  .match-mid  { background: rgba(90, 140, 184, 0.15); color: var(--match-mid); }
+  .match-low  { background: rgba(122, 118, 144, 0.15); color: var(--match-low); }
+
+  .result-planets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  .result-planet {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .result-planet.matched {
+    color: var(--gold);
+  }
+
+  .result-planet.unmatched {
+    color: var(--text-dim);
+  }
+
+  .result-time-hint {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    font-style: italic;
+  }
+
+  .result-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--purple);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .result-link:hover {
+    color: var(--gold);
+  }
+
+  /* -- Status / Error -- */
+  .status-msg {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+
+  .status-msg.error {
+    color: var(--sign-fire);
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  /* -- Footer -- */
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  footer a {
+    color: var(--purple);
+    text-decoration: none;
+  }
+
+  /* -- Responsive -- */
+  @media (max-width: 600px) {
+    .container { padding: 1.2rem 1rem 3rem; }
+    header h1 { font-size: 1.4rem; }
+    .planet-row {
+      grid-template-columns: 80px 1fr;
+      grid-template-rows: auto auto;
+    }
+    .priority-toggle {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>✦ Reverse Horoscope ✦</h1>
+    <p>逆引きホロスコープ — 天体配置から誕生日候補を探す</p>
+    <div class="subtitle">
+      天体のサイン（星座）を指定して、その配置が成立する日付を検索します。<br>
+      創作キャラクターの誕生日設定にお使いください。
+    </div>
+  </header>
+
+  <div id="wasmStatus" class="status-msg">
+    ⏳ 計算エンジンを読み込み中…
+  </div>
+
+  <div id="mainForm" style="display:none;">
+
+    <div class="section">
+      <div class="section-title">天体のサイン指定</div>
+      <div class="planet-grid" id="planetGrid"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">検索する年代</div>
+      <div class="year-range">
+        <input type="number" class="year-input" id="yearStart" value="2000" min="-3000" max="3000">
+        <span class="year-sep">〜</span>
+        <input type="number" class="year-input" id="yearEnd" value="2009" min="-3000" max="3000">
+        <span class="year-sep">年</span>
+        <div class="year-hint">※ 最大10年間。広い範囲は複数回検索してください。紀元前3000年〜紀元3000年に対応。</div>
+      </div>
+    </div>
+
+    <div class="search-area">
+      <button class="search-btn" id="searchBtn">検索開始</button>
+    </div>
+
+    <div class="progress-area" id="progressArea">
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar"></div>
+      </div>
+      <div class="progress-text" id="progressText">準備中…</div>
+    </div>
+
+    <div class="results-area" id="resultsArea">
+      <div class="section-title">検索結果</div>
+      <div class="results-summary" id="resultsSummary"></div>
+      <div id="resultsList"></div>
+    </div>
+
+  </div>
+
+  <footer>
+    Powered by <a href="https://github.com/ptprashanttripathi/sweph-wasm" target="_blank" rel="noopener">sweph-wasm</a> (Swiss Ephemeris WebAssembly)<br>
+    計算はすべてブラウザ内で完結します。データはサーバーに送信されません。<br>
+    <a href="./">astro-tool トップへ戻る</a>
+  </footer>
+
+</div>
+
+<script type="module" src="/src/reverse.js"></script>
+</body>
+</html>

@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         tutorial: resolve(__dirname, 'tutorial.html'),
+        reverse: resolve(__dirname, 'reverse.html'),
       },
     },
   },
