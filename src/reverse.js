@@ -459,15 +459,6 @@ function displayResults({ results, totalFound, totalCriteria }) {
       }
     }
 
-    // Link to natal chart
-    const link = document.createElement('a');
-    link.className = 'result-link';
-    const pad = (n) => String(n).padStart(2, '0');
-    link.href = `./?date=${r.date.year}-${pad(r.date.month)}-${pad(r.date.day)}`;
-    link.textContent = '→ この日付でネイタルチャートを見る';
-    link.target = '_blank';
-    card.appendChild(link);
-
     list.appendChild(card);
   }
 }
