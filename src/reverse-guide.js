@@ -20,13 +20,6 @@ const SIGNS = [
   { name: '魚座',   symbol: '♓', element: 'water', index: 11 },
 ];
 
-const ELEMENTS = {
-  fire:  { name: '火', signs: [0, 4, 8],  color: 'var(--sign-fire)' },
-  earth: { name: '地', signs: [1, 5, 9],  color: 'var(--sign-earth)' },
-  air:   { name: '風', signs: [2, 6, 10], color: 'var(--sign-air)' },
-  water: { name: '水', signs: [3, 7, 11], color: 'var(--sign-water)' },
-};
-
 const PLANET_INFO = {
   sun:     { id: 0, name: '太陽', symbol: '☉' },
   moon:    { id: 1, name: '月',   symbol: '☽' },
@@ -36,10 +29,68 @@ const PLANET_INFO = {
 };
 
 // ============================================================
-// Question data
+// Sign trait descriptions (for dynamic Q6)
+// ============================================================
+const SIGN_TRAITS = {
+  venus: {
+    0:  '好きになったら即行動。駆け引きはしない',
+    1:  '五感で愛する。触れる、味わう、そばにいる',
+    2:  '会話が楽しい相手が好き。軽やかな関係',
+    3:  '守る、包む、世話を焼く。家庭的な愛',
+    4:  '惜しみなく与える。相手を特別扱いする',
+    5:  '相手のために細かく気を配る。実用的な愛',
+    6:  '美しい関係を望む。相手の意思を尊重し、距離を保つ',
+    7:  '深く執着する。全てを共有したい。秘密の関係',
+    8:  '自由な関係を好む。束縛しないし、されたくない',
+    9:  '責任を持つ。時間を掛けて信頼を築く',
+    10: '友情の延長のような愛。型にはまらない関係',
+    11: '境界なく溶け合う。相手の痛みも喜びも自分のもの',
+  },
+  mercury: {
+    0:  '思ったことをそのまま言う。遠回しにできない',
+    1:  'ゆっくり、じっくり。一度決めたら変えない',
+    2:  '話題がコロコロ変わる。好奇心旺盛。早口',
+    3:  '感情を込めて話す。相手を気遣う言葉選び',
+    4:  '堂々と、ドラマチックに語る。物語のように話す',
+    5:  '精密、分析的。正確に言えないなら言わない',
+    6:  '相手に合わせる。公平に、丁寧に。外交的',
+    7:  '言葉の裏を読む。核心を突く。秘密主義',
+    8:  '大きなビジョンを語る。細かいことは気にしない',
+    9:  '端的、無駄がない。結論と事実だけ',
+    10: '独自の視点。常識とは違う角度から物を見る',
+    11: '詩的、抽象的。感覚で伝える',
+  },
+};
+
+// ============================================================
+// Astronomical constraints
+// ============================================================
+function getAllowedSigns(planetKey, sunSignIndex) {
+  if (planetKey === 'mercury') {
+    return [
+      (sunSignIndex + 11) % 12,
+      sunSignIndex,
+      (sunSignIndex + 1) % 12,
+    ];
+  }
+  if (planetKey === 'venus') {
+    return [
+      (sunSignIndex + 10) % 12,
+      (sunSignIndex + 11) % 12,
+      sunSignIndex,
+      (sunSignIndex + 1) % 12,
+      (sunSignIndex + 2) % 12,
+    ];
+  }
+  return SIGNS.map((_, i) => i);
+}
+
+// ============================================================
+// Question data (static)
+// Q6 for venus/mercury is generated dynamically
+// Q6 for mars uses the traditional element→sign two-step flow
 // ============================================================
 const QUESTIONS = {
-  // --- Step 1: Sun sign ---
   q1: {
     label: 'STEP 1 — 太陽星座',
     text: 'このキャラクターが人生で最も大切にしていることは？',
@@ -86,8 +137,6 @@ const QUESTIONS = {
       { text: '境界なく溶け合う。全てを受け入れ、全てに共感する',     sign: 11, result: 'sun' },
     ],
   },
-
-  // --- Step 2: Moon sign ---
   q3: {
     label: 'STEP 2 — 月星座',
     text: 'このキャラクターがストレスを受けた時、最初にどうなる？',
@@ -134,116 +183,16 @@ const QUESTIONS = {
       { text: '何も考えなくていい状態。ぼんやりできること',     sign: 11, result: 'moon' },
     ],
   },
-
-  // --- Step 3: Extra planet selection ---
   q5: {
     label: 'STEP 3 — 追加天体',
     text: 'このキャラクターの一番の「個性」は、何に現れている？',
     choices: [
-      { text: '恋愛・愛情表現・好きなものとの関わり方',   planet: 'venus',   next: 'q6a' },
-      { text: '話し方・考え方・コミュニケーションの仕方', planet: 'mercury', next: 'q6b' },
-      { text: '行動力・怒った時の振る舞い・戦い方',       planet: 'mars',    next: 'q6c' },
+      { text: '恋愛・愛情表現・好きなものとの関わり方',   planet: 'venus' },
+      { text: '話し方・考え方・コミュニケーションの仕方', planet: 'mercury' },
+      { text: '行動力・怒った時の振る舞い・戦い方',       planet: 'mars',  next: 'q6c' },
     ],
   },
-
-  // --- Step 4: Extra planet sign ---
-  // Venus
-  q6a: {
-    label: 'STEP 4 — 金星（愛し方）',
-    text: 'このキャラクターの愛情表現は？',
-    choices: [
-      { text: '情熱的、直球、追いかける',           element: 'fire',  next: 'q6a_fire' },
-      { text: '堅実、献身的、行動で示す',           element: 'earth', next: 'q6a_earth' },
-      { text: '言葉で伝える、対等な関係を好む',     element: 'air',   next: 'q6a_air' },
-      { text: '深く感じる、尽くす、一体化したがる', element: 'water', next: 'q6a_water' },
-    ],
-  },
-  q6a_fire: {
-    label: 'STEP 4 — 金星（愛し方）',
-    text: '愛し方をもう少し詳しく。',
-    choices: [
-      { text: '好きになったら即行動。駆け引きはしない',                 sign: 0, result: 'venus' },
-      { text: '惜しみなく与える。相手を特別扱いする',                   sign: 4, result: 'venus' },
-      { text: '自由な関係を好む。束縛しないし、されたくない',           sign: 8, result: 'venus' },
-    ],
-  },
-  q6a_earth: {
-    label: 'STEP 4 — 金星（愛し方）',
-    text: '愛し方をもう少し詳しく。',
-    choices: [
-      { text: '五感で愛する。触れる、味わう、そばにいる',               sign: 1, result: 'venus' },
-      { text: '相手のために細かく気を配る。実用的な愛',                 sign: 5, result: 'venus' },
-      { text: '責任を持つ。時間を掛けて信頼を築く',                     sign: 9, result: 'venus' },
-    ],
-  },
-  q6a_air: {
-    label: 'STEP 4 — 金星（愛し方）',
-    text: '愛し方をもう少し詳しく。',
-    choices: [
-      { text: '会話が楽しい相手が好き。軽やかな関係',                   sign: 2, result: 'venus' },
-      { text: '美しい関係を望む。相手の意思を尊重し、距離を保つ',       sign: 6, result: 'venus' },
-      { text: '友情の延長のような愛。型にはまらない関係',               sign: 10, result: 'venus' },
-    ],
-  },
-  q6a_water: {
-    label: 'STEP 4 — 金星（愛し方）',
-    text: '愛し方をもう少し詳しく。',
-    choices: [
-      { text: '守る、包む、世話を焼く。家庭的な愛',                     sign: 3, result: 'venus' },
-      { text: '深く執着する。全てを共有したい。秘密の関係',             sign: 7, result: 'venus' },
-      { text: '境界なく溶け合う。相手の痛みも喜びも自分のもの',         sign: 11, result: 'venus' },
-    ],
-  },
-
-  // Mercury
-  q6b: {
-    label: 'STEP 4 — 水星（思考・言葉）',
-    text: 'このキャラクターの話し方や考え方は？',
-    choices: [
-      { text: '率直、短い、結論が先',       element: 'fire',  next: 'q6b_fire' },
-      { text: '正確、慎重、具体的',         element: 'earth', next: 'q6b_earth' },
-      { text: '論理的、客観的、多角的',     element: 'air',   next: 'q6b_air' },
-      { text: '直感的、婉曲、空気を読む',   element: 'water', next: 'q6b_water' },
-    ],
-  },
-  q6b_fire: {
-    label: 'STEP 4 — 水星（思考・言葉）',
-    text: '話し方をもう少し詳しく。',
-    choices: [
-      { text: '思ったことをそのまま言う。遠回しにできない',             sign: 0, result: 'mercury' },
-      { text: '堂々と、ドラマチックに語る。物語のように話す',           sign: 4, result: 'mercury' },
-      { text: '大きなビジョンを語る。細かいことは気にしない',           sign: 8, result: 'mercury' },
-    ],
-  },
-  q6b_earth: {
-    label: 'STEP 4 — 水星（思考・言葉）',
-    text: '話し方をもう少し詳しく。',
-    choices: [
-      { text: 'ゆっくり、じっくり。一度決めたら変えない',               sign: 1, result: 'mercury' },
-      { text: '精密、分析的。正確に言えないなら言わない',               sign: 5, result: 'mercury' },
-      { text: '端的、無駄がない。結論と事実だけ',                       sign: 9, result: 'mercury' },
-    ],
-  },
-  q6b_air: {
-    label: 'STEP 4 — 水星（思考・言葉）',
-    text: '話し方をもう少し詳しく。',
-    choices: [
-      { text: '話題がコロコロ変わる。好奇心旺盛。早口',                 sign: 2, result: 'mercury' },
-      { text: '相手に合わせる。公平に、丁寧に。外交的',                 sign: 6, result: 'mercury' },
-      { text: '独自の視点。常識とは違う角度から物を見る',               sign: 10, result: 'mercury' },
-    ],
-  },
-  q6b_water: {
-    label: 'STEP 4 — 水星（思考・言葉）',
-    text: '話し方をもう少し詳しく。',
-    choices: [
-      { text: '感情を込めて話す。相手を気遣う言葉選び',                 sign: 3, result: 'mercury' },
-      { text: '言葉の裏を読む。核心を突く。秘密主義',                   sign: 7, result: 'mercury' },
-      { text: '詩的、抽象的。感覚で伝える',                             sign: 11, result: 'mercury' },
-    ],
-  },
-
-  // Mars
+  // Mars only (no constraint → traditional two-step)
   q6c: {
     label: 'STEP 4 — 火星（行動力・怒り方）',
     text: 'このキャラクターが怒ったり、本気で動く時は？',
@@ -292,44 +241,37 @@ const QUESTIONS = {
   },
 };
 
-// Question flow: the order of "steps" for progress dots
-// Actual flow is dynamic based on branching, but we track 6 logical steps
 const TOTAL_STEPS = 6;
 
 // ============================================================
-// Astronomical constraints
+// Dynamic Q6 builder for constrained planets
 // ============================================================
-
-/**
- * Get allowed sign indices for a planet given the sun sign.
- * Mercury: sun ± 1 sign (3 candidates)
- * Venus:   sun ± 2 signs (5 candidates)
- * Mars+:   no constraint (all 12)
- */
-function getAllowedSigns(planetKey, sunSignIndex) {
-  if (planetKey === 'mercury') {
-    return [
-      (sunSignIndex + 11) % 12, // -1
-      sunSignIndex,
-      (sunSignIndex + 1) % 12,  // +1
-    ];
-  }
-  if (planetKey === 'venus') {
-    return [
-      (sunSignIndex + 10) % 12, // -2
-      (sunSignIndex + 11) % 12, // -1
-      sunSignIndex,
-      (sunSignIndex + 1) % 12,  // +1
-      (sunSignIndex + 2) % 12,  // +2
-    ];
-  }
-  // Mars and beyond: no constraint
-  return SIGNS.map((_, i) => i);
-}
-
-function checkConstraint(planetKey, signIndex, sunSignIndex) {
+function buildConstrainedQ6(planetKey, sunSignIndex) {
   const allowed = getAllowedSigns(planetKey, sunSignIndex);
-  return allowed.includes(signIndex);
+  const traits = SIGN_TRAITS[planetKey];
+
+  const questionTexts = {
+    venus:   'このキャラクターの愛し方に一番近いのは？',
+    mercury: 'このキャラクターの話し方・考え方に一番近いのは？',
+  };
+
+  const labelTexts = {
+    venus:   'STEP 4 — 金星（愛し方）',
+    mercury: 'STEP 4 — 水星（思考・言葉）',
+  };
+
+  return {
+    label: labelTexts[planetKey],
+    text: questionTexts[planetKey],
+    isDynamic: true,
+    choices: allowed.map((si) => ({
+      text: traits[si],
+      hint: SIGNS[si].symbol + ' ' + SIGNS[si].name,
+      sign: si,
+      result: planetKey,
+      element: SIGNS[si].element,
+    })),
+  };
 }
 
 // ============================================================
@@ -401,15 +343,13 @@ const LLM_PROMPT = `あなたは西洋占星術に精通したアシスタント
 // ============================================================
 let wizardState = {
   currentQuestion: null,
-  history: [],      // stack of { questionId, choiceIndex } for back navigation
+  history: [],
   stepCount: 0,
-  results: {},      // { sun: signIndex, moon: signIndex, venus/mercury/mars: signIndex }
-  extraPlanet: null, // 'venus' | 'mercury' | 'mars'
+  results: {},
+  extraPlanet: null,
+  _dynamicQ: null,
 };
 
-// ============================================================
-// DOM helpers
-// ============================================================
 const $ = (id) => document.getElementById(id);
 
 // ============================================================
@@ -462,7 +402,6 @@ function renderPrompt() {
         copyBtn.classList.remove('copied');
       }, 2000);
     } catch (e) {
-      // Fallback for older browsers
       const textarea = document.createElement('textarea');
       textarea.value = LLM_PROMPT;
       textarea.style.position = 'fixed';
@@ -491,6 +430,7 @@ function resetWizard() {
     stepCount: 0,
     results: {},
     extraPlanet: null,
+    _dynamicQ: null,
   };
 }
 
@@ -500,7 +440,7 @@ function getLogicalStep(questionId) {
   if (questionId === 'q3') return 2;
   if (questionId.startsWith('q4')) return 3;
   if (questionId === 'q5') return 4;
-  if (questionId.startsWith('q6')) return 5;
+  if (questionId.startsWith('q6') || questionId.startsWith('_dynamic')) return 5;
   return 0;
 }
 
@@ -516,9 +456,10 @@ function renderProgress(currentStep) {
   }
 }
 
-function showQuestion(questionId) {
+function showQuestion(questionId, dynamicQ) {
   wizardState.currentQuestion = questionId;
-  const q = QUESTIONS[questionId];
+
+  const q = dynamicQ || QUESTIONS[questionId];
   if (!q) return;
 
   const logicalStep = getLogicalStep(questionId);
@@ -549,9 +490,18 @@ function showQuestion(questionId) {
     if (choice.element) {
       btn.dataset.element = choice.element;
     }
-    btn.textContent = choice.text;
 
-    btn.addEventListener('click', () => handleChoice(questionId, idx));
+    const mainText = document.createTextNode(choice.text);
+    btn.appendChild(mainText);
+
+    if (choice.hint) {
+      const hintSpan = document.createElement('span');
+      hintSpan.className = 'choice-hint';
+      hintSpan.textContent = choice.hint;
+      btn.appendChild(hintSpan);
+    }
+
+    btn.addEventListener('click', () => handleChoice(questionId, idx, q));
     choiceGrid.appendChild(btn);
   });
 
@@ -560,27 +510,19 @@ function showQuestion(questionId) {
   stepDiv.appendChild(choiceGrid);
   stepsContainer.appendChild(stepDiv);
 
-  // Show/hide back button
   const nav = $('wizardNav');
-  if (wizardState.history.length > 0) {
-    nav.style.display = 'flex';
-  } else {
-    nav.style.display = 'none';
-  }
+  nav.style.display = wizardState.history.length > 0 ? 'flex' : 'none';
 }
 
-function handleChoice(questionId, choiceIndex) {
-  const q = QUESTIONS[questionId];
+function handleChoice(questionId, choiceIndex, questionObj) {
+  const q = questionObj || QUESTIONS[questionId];
   const choice = q.choices[choiceIndex];
 
-  // Save to history for back navigation
   wizardState.history.push({ questionId, choiceIndex });
 
-  // If this choice determines a result (sign for a planet)
   if (choice.result && choice.sign !== undefined) {
     wizardState.results[choice.result] = choice.sign;
 
-    // Determine next question
     if (choice.result === 'sun') {
       showQuestion('q3');
       return;
@@ -589,7 +531,6 @@ function handleChoice(questionId, choiceIndex) {
       showQuestion('q5');
       return;
     }
-    // Extra planet result → done, show result
     if (['venus', 'mercury', 'mars'].includes(choice.result)) {
       wizardState.extraPlanet = choice.result;
       showResult();
@@ -597,12 +538,19 @@ function handleChoice(questionId, choiceIndex) {
     }
   }
 
-  // If this choice selects an extra planet
   if (choice.planet) {
     wizardState.extraPlanet = choice.planet;
+
+    if (choice.planet === 'venus' || choice.planet === 'mercury') {
+      const sunSign = wizardState.results.sun;
+      const dynamicQ = buildConstrainedQ6(choice.planet, sunSign);
+      const dynamicId = '_dynamic_' + choice.planet;
+      wizardState._dynamicQ = dynamicQ;
+      showQuestion(dynamicId, dynamicQ);
+      return;
+    }
   }
 
-  // Go to next question
   if (choice.next) {
     showQuestion(choice.next);
   }
@@ -612,26 +560,26 @@ function initWizardBack() {
   $('wizardBack').addEventListener('click', () => {
     if (wizardState.history.length === 0) return;
 
-    // Pop the last choice
     wizardState.history.pop();
 
     if (wizardState.history.length === 0) {
-      // Go back to first question
       showQuestion('q1');
-      // Clear results
       wizardState.results = {};
       wizardState.extraPlanet = null;
+      wizardState._dynamicQ = null;
       return;
     }
 
-    // Replay all choices up to the previous state
     const savedHistory = [...wizardState.history];
+    const lastQuestionId = savedHistory[savedHistory.length - 1].questionId;
+
+    // Reset and replay up to (but not including) the last entry
     resetWizard();
 
-    // Replay up to the second-to-last entry to reach the previous question
     for (let i = 0; i < savedHistory.length - 1; i++) {
       const entry = savedHistory[i];
       const q = QUESTIONS[entry.questionId];
+      if (!q) continue;
       const choice = q.choices[entry.choiceIndex];
 
       wizardState.history.push(entry);
@@ -644,9 +592,15 @@ function initWizardBack() {
       }
     }
 
-    // Show the last question in history (the one we want to re-answer)
-    const lastEntry = savedHistory[savedHistory.length - 1];
-    showQuestion(lastEntry.questionId);
+    // Re-show the last question
+    let dynamicQ = null;
+    if (lastQuestionId.startsWith('_dynamic_')) {
+      const planetKey = lastQuestionId.replace('_dynamic_', '');
+      dynamicQ = buildConstrainedQ6(planetKey, wizardState.results.sun);
+      wizardState._dynamicQ = dynamicQ;
+    }
+
+    showQuestion(lastQuestionId, dynamicQ);
   });
 }
 
@@ -662,12 +616,6 @@ function showResult() {
   const extraPlanet = wizardState.extraPlanet;
   const extraSign = wizardState.results[extraPlanet];
 
-  // Check astronomical constraint
-  const needsConstraintCheck = (extraPlanet === 'mercury' || extraPlanet === 'venus');
-  const constraintOk = needsConstraintCheck
-    ? checkConstraint(extraPlanet, extraSign, sunSign)
-    : true;
-
   const resultDiv = $('wizardResult');
   resultDiv.innerHTML = '';
 
@@ -676,96 +624,41 @@ function showResult() {
   title.textContent = '推測結果';
   resultDiv.appendChild(title);
 
-  // Summary card
   const card = document.createElement('div');
   card.className = 'result-summary-card';
 
   const rows = [
     { planet: PLANET_INFO.sun,  sign: sunSign,  priority: '必須' },
     { planet: PLANET_INFO.moon, sign: moonSign, priority: '必須' },
+    { planet: PLANET_INFO[extraPlanet], sign: extraSign, priority: 'できれば' },
   ];
-
-  if (constraintOk) {
-    rows.push({
-      planet: PLANET_INFO[extraPlanet],
-      sign: extraSign,
-      priority: 'できれば',
-    });
-  }
 
   rows.forEach((r) => {
     const row = document.createElement('div');
     row.className = 'result-sign-row';
-    row.innerHTML = `
-      <span class="result-planet-label">${r.planet.symbol} ${r.planet.name}</span>
-      <span class="result-sign-value">${SIGNS[r.sign].symbol} ${SIGNS[r.sign].name}</span>
-      <span class="result-priority">${r.priority}</span>
-    `;
+    row.innerHTML =
+      '<span class="result-planet-label">' + r.planet.symbol + ' ' + r.planet.name + '</span>' +
+      '<span class="result-sign-value">' + SIGNS[r.sign].symbol + ' ' + SIGNS[r.sign].name + '</span>' +
+      '<span class="result-priority">' + r.priority + '</span>';
     card.appendChild(row);
   });
 
   resultDiv.appendChild(card);
 
-  // Constraint warning if needed
-  if (!constraintOk) {
-    const warning = document.createElement('div');
-    warning.className = 'constraint-warning';
-
-    const planetName = PLANET_INFO[extraPlanet].name;
-    const planetSymbol = PLANET_INFO[extraPlanet].symbol;
-    const chosenSignName = SIGNS[extraSign].name;
-    const sunSignName = SIGNS[sunSign].name;
-
-    const allowed = getAllowedSigns(extraPlanet, sunSign);
-    const range = extraPlanet === 'mercury' ? '前後1つ' : '前後2つ';
-
-    warning.innerHTML = `
-      <div class="constraint-warning-title">⚠ 天文学的制約</div>
-      <div>
-        ${planetSymbol}${planetName}（${chosenSignName}）は、☉太陽（${sunSignName}）との組み合わせでは天文学的に成立しません。<br>
-        ${planetName}は太陽と同じか${range}の星座にしか位置できないためです。<br>
-        以下の候補から、最もキャラクターに近いものを選んでください。
-      </div>
-    `;
-
-    const choices = document.createElement('div');
-    choices.className = 'constraint-choices';
-
-    allowed.forEach((si) => {
-      const btn = document.createElement('button');
-      btn.className = 'constraint-choice-btn';
-      btn.type = 'button';
-      btn.textContent = `${SIGNS[si].symbol} ${SIGNS[si].name}`;
-      btn.addEventListener('click', () => {
-        wizardState.results[extraPlanet] = si;
-        showResult(); // re-render with corrected sign
-      });
-      choices.appendChild(btn);
-    });
-
-    warning.appendChild(choices);
-    resultDiv.appendChild(warning);
-  }
-
-  // Action buttons
   const actions = document.createElement('div');
   actions.className = 'result-actions';
 
-  if (constraintOk) {
-    const searchLink = document.createElement('a');
-    searchLink.className = 'search-link-btn';
-    searchLink.href = buildReverseUrl();
-    searchLink.textContent = 'この条件で逆引き検索する →';
-    actions.appendChild(searchLink);
-  }
+  const searchLink = document.createElement('a');
+  searchLink.className = 'search-link-btn';
+  searchLink.href = buildReverseUrl();
+  searchLink.textContent = 'この条件で逆引き検索する →';
+  actions.appendChild(searchLink);
 
   const restartBtn = document.createElement('button');
   restartBtn.className = 'restart-btn';
   restartBtn.type = 'button';
   restartBtn.textContent = '↺ もう一度やり直す';
-  restartBtn.addEventListener('click', () => {
-    showRouteChoice();
-  });
+  restartBtn.addEventListener('click', () => showRouteChoice());
   actions.appendChild(restartBtn);
 
   resultDiv.appendChild(actions);
@@ -776,25 +669,21 @@ function showResult() {
 // ============================================================
 function buildReverseUrl() {
   const params = new URLSearchParams();
-
-  // sun and moon (required)
   params.set('sun', wizardState.results.sun);
   params.set('moon', wizardState.results.moon);
 
-  // extra planet
   const extraPlanet = wizardState.extraPlanet;
   if (extraPlanet && wizardState.results[extraPlanet] !== undefined) {
     params.set(extraPlanet, wizardState.results[extraPlanet]);
   }
 
-  // Priority info: sun and moon are required, extra is optional
   params.set('p_sun', 'required');
   params.set('p_moon', 'required');
   if (extraPlanet) {
     params.set('p_' + extraPlanet, 'optional');
   }
 
-  return `./reverse.html?${params.toString()}`;
+  return './reverse.html?' + params.toString();
 }
 
 // ============================================================
