@@ -73,6 +73,57 @@ function jdToDateTime(jd) {
   return `${r.month}/${r.day} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 }
 
+// 緯度経度モードの状態管理
+const locModes = {};
+
+function isCoordMode(prefix) {
+  return locModes[prefix] === 'coord';
+}
+
+function getLocation(prefix, prefId, cityId) {
+  if (isCoordMode(prefix)) {
+    const lat = parseFloat(document.getElementById(prefix + 'Lat').value);
+    const lng = parseFloat(document.getElementById(prefix + 'Lng').value);
+    const utcOffset = parseFloat(document.getElementById(prefix + 'Utc').value);
+    if (isNaN(lat) || isNaN(lng) || isNaN(utcOffset)) {
+      alert('緯度・経度・UTCオフセットをすべて入力してください');
+      return null;
+    }
+    if (lat < -90 || lat > 90) { alert('緯度は-90〜90の範囲で入力してください'); return null; }
+    if (lng < -180 || lng > 180) { alert('経度は-180〜180の範囲で入力してください'); return null; }
+    if (utcOffset < -12 || utcOffset > 14) { alert('UTCオフセットは-12〜14の範囲で入力してください'); return null; }
+    return { lat, lng, utcOffset, label: `緯度${lat}°, 経度${lng}° (UTC${utcOffset >= 0 ? '+' : ''}${utcOffset})` };
+  } else {
+    const pref = document.getElementById(prefId).value;
+    const cityName = document.getElementById(cityId).value;
+    const city = cities[pref].find(c => c.name === cityName);
+    if (!city) return null;
+    return { lat: city.lat, lng: city.lng, utcOffset: 9, label: `${pref}${cityName}` };
+  }
+}
+
+function initLocToggle() {
+  for (const btn of document.querySelectorAll('.loc-toggle')) {
+    const prefix = btn.dataset.target;
+    locModes[prefix] = 'select';
+    btn.addEventListener('click', () => {
+      const selectEl = document.getElementById(prefix + 'LocSelect');
+      const coordEl = document.getElementById(prefix + 'LocCoord');
+      if (locModes[prefix] === 'select') {
+        locModes[prefix] = 'coord';
+        selectEl.style.display = 'none';
+        coordEl.style.display = '';
+        btn.textContent = '都道府県に戻す';
+      } else {
+        locModes[prefix] = 'select';
+        selectEl.style.display = '';
+        coordEl.style.display = 'none';
+        btn.textContent = '緯度経度で入力';
+      }
+    });
+  }
+}
+
 function calculate() {
   if (!swe) return;
 
@@ -99,19 +150,16 @@ function calculate() {
   const hour = parseInt(hourVal);
   const minute = parseInt(minuteVal);
 
-  const pref = document.getElementById('pref').value;
-  const cityName = document.getElementById('city').value;
+  const loc = getLocation('natal', 'pref', 'city');
+  if (!loc) return;
 
-  const city = cities[pref].find(c => c.name === cityName);
-  if (!city) return;
-
-  const utcHour = hour - 9 + minute / 60;
+  const utcHour = hour - loc.utcOffset + minute / 60;
   const jd = swe.swe_julday(year, month, day, utcHour, 1);
 
   const positions = [];
-  let output = `【ネイタル】${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')} ${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')} ${pref}${cityName}\nハウス: プラシーダス\n\n`;
+  let output = `【ネイタル】${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')} ${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')} ${loc.label}\nハウス: プラシーダス\n\n`;
 
-  const houses = swe.swe_houses(jd, city.lat, city.lng, 'P');
+  const houses = swe.swe_houses(jd, loc.lat, loc.lng, 'P');
 
   for (const [id, name] of PLANETS) {
     const r = swe.swe_calc_ut(jd, id, 256);
@@ -141,7 +189,7 @@ function calculate() {
   natalPositions = positions;
   natalAngles = { asc, mc };
   natalHouses = houses;
-  natalCity = city;
+  natalCity = loc;
   
   document.getElementById('calcYearly').disabled = false;
   document.getElementById('copyYearly').disabled = false;
@@ -383,11 +431,8 @@ function calculateLunarReturn() {
 
   const year = parseInt(document.getElementById('lrYear').value);
   const month = parseInt(document.getElementById('lrMonth').value);
-  const pref = document.getElementById('lrPref').value;
-  const cityName = document.getElementById('lrCity').value;
-
-  const city = cities[pref].find(c => c.name === cityName);
-  if (!city) return;
+  const loc = getLocation('lr', 'lrPref', 'lrCity');
+  if (!loc) return;
 
   const natalMoon = natalPositions.find(p => p.name === '月').lon;
 
@@ -428,22 +473,23 @@ function calculateLunarReturn() {
 
   for (let i = 0; i < returns.length; i++) {
     const returnJd = returns[i];
-    const jstJd = returnJd + 9 / 24;
-    const dt = swe.swe_revjul(jstJd, 1);
+    const localJd = returnJd + loc.utcOffset / 24;
+    const dt = swe.swe_revjul(localJd, 1);
     const h = Math.floor(dt.hour);
     const m = Math.floor((dt.hour - h) * 60);
+    const tzLabel = loc.utcOffset === 9 ? 'JST' : `UTC${loc.utcOffset >= 0 ? '+' : ''}${loc.utcOffset}`;
 
     if (returns.length > 1) {
       output += `【ルナリターン ${i + 1}】`;
     } else {
       output += `【ルナリターン】`;
     }
-    output += `${dt.year}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} JST\n`;
-    output += `場所: ${pref}${cityName}\n`;
+    output += `${dt.year}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} ${tzLabel}\n`;
+    output += `場所: ${loc.label}\n`;
     output += `ネイタル月: ${fmt(natalMoon)}\n`;
     output += `ハウス: プラシーダス\n\n`;
 
-    const houses = swe.swe_houses(returnJd, city.lat, city.lng, 'P');
+    const houses = swe.swe_houses(returnJd, loc.lat, loc.lng, 'P');
 
     output += `■ 天体\n`;
     for (const [id, name] of PLANETS) {
@@ -526,11 +572,8 @@ function calculateSolarChart() {
   if (!swe || !natalPositions) return;
 
   const year = parseInt(document.getElementById('srYear').value);
-  const pref = document.getElementById('srPref').value;
-  const cityName = document.getElementById('srCity').value;
-
-  const city = cities[pref].find(c => c.name === cityName);
-  if (!city) return;
+  const loc = getLocation('sr', 'srPref', 'srCity');
+  if (!loc) return;
 
   const returnJd = findSolarReturn(year);
   if (!returnJd) {
@@ -539,17 +582,18 @@ function calculateSolarChart() {
   }
 
   const natalSun = natalPositions.find(p => p.name === '太陽').lon;
-  const jstJd = returnJd + 9 / 24;
-  const dt = swe.swe_revjul(jstJd, 1);
+  const localJd = returnJd + loc.utcOffset / 24;
+  const dt = swe.swe_revjul(localJd, 1);
   const h = Math.floor(dt.hour);
   const m = Math.floor((dt.hour - h) * 60);
+  const tzLabel = loc.utcOffset === 9 ? 'JST' : `UTC${loc.utcOffset >= 0 ? '+' : ''}${loc.utcOffset}`;
 
-  let output = `【ソーラーリターン】${dt.year}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} JST\n`;
-  output += `場所: ${pref}${cityName}\n`;
+  let output = `【ソーラーリターン】${dt.year}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} ${tzLabel}\n`;
+  output += `場所: ${loc.label}\n`;
   output += `ネイタル太陽: ${fmt(natalSun)}\n`;
   output += `ハウス: プラシーダス\n\n`;
 
-  const houses = swe.swe_houses(returnJd, city.lat, city.lng, 'P');
+  const houses = swe.swe_houses(returnJd, loc.lat, loc.lng, 'P');
 
   output += `■ 天体\n`;
   for (const [id, name] of PLANETS) {
@@ -601,8 +645,10 @@ function calculateSolarYear() {
     return;
   }
 
-  const startDt = swe.swe_revjul(startJd + 9/24, 1);
-  const endDt = swe.swe_revjul(endJd + 9/24, 1);
+  const srLoc = getLocation('sr', 'srPref', 'srCity');
+  const srOffset = srLoc ? srLoc.utcOffset : 9;
+  const startDt = swe.swe_revjul(startJd + srOffset/24, 1);
+  const endDt = swe.swe_revjul(endJd + srOffset/24, 1);
 
   let output = `【ソーラーリターン年 天体運行概要】\n`;
   output += `${startDt.year}/${startDt.month}/${startDt.day} 〜 ${endDt.year}/${endDt.month}/${endDt.day}\n\n`;
@@ -679,10 +725,9 @@ function calculateSynastry() {
   const aHour = parseInt(aHourVal);
   const aMinute = parseInt(aMinuteVal);
 
-  const aPref = document.getElementById('synAPref').value;
-  const aCityName = document.getElementById('synACity').value;
-  const aCity = cities[aPref].find(c => c.name === aCityName);
-  
+  const aLoc = getLocation('synA', 'synAPref', 'synACity');
+  if (!aLoc) return;
+
   // B
   const bYearVal = document.getElementById('synBYear').value;
   const bMonthVal = document.getElementById('synBMonth').value;
@@ -707,14 +752,13 @@ function calculateSynastry() {
   const bHour = parseInt(bHourVal);
   const bMinute = parseInt(bMinuteVal);
   
-  const bPref = document.getElementById('synBPref').value;
-  const bCityName = document.getElementById('synBCity').value;
-  const bCity = cities[bPref].find(c => c.name === bCityName);
+  const bLoc = getLocation('synB', 'synBPref', 'synBCity');
+  if (!bLoc) return;
 
   // A計算
-  const aUtcHour = aHour - 9 + aMinute / 60;
+  const aUtcHour = aHour - aLoc.utcOffset + aMinute / 60;
   const aJd = swe.swe_julday(aYear, aMonth, aDay, aUtcHour, 1);
-  const aHouses = swe.swe_houses(aJd, aCity.lat, aCity.lng, 'P');
+  const aHouses = swe.swe_houses(aJd, aLoc.lat, aLoc.lng, 'P');
   const aPositions = [];
   for (const [id, name] of PLANETS) {
     const r = swe.swe_calc_ut(aJd, id, 256);
@@ -725,9 +769,9 @@ function calculateSynastry() {
   const aAngles = { asc: aHouses.ascmc[0], mc: aHouses.ascmc[1] };
 
   // B計算
-  const bUtcHour = bHour - 9 + bMinute / 60;
+  const bUtcHour = bHour - bLoc.utcOffset + bMinute / 60;
   const bJd = swe.swe_julday(bYear, bMonth, bDay, bUtcHour, 1);
-  const bHouses = swe.swe_houses(bJd, bCity.lat, bCity.lng, 'P');
+  const bHouses = swe.swe_houses(bJd, bLoc.lat, bLoc.lng, 'P');
   const bPositions = [];
   for (const [id, name] of PLANETS) {
     const r = swe.swe_calc_ut(bJd, id, 256);
@@ -935,6 +979,8 @@ async function init() {
   
   // ソーラーリターン
   document.getElementById('srYear').value = thisYear;
+
+  initLocToggle();
 
   document.getElementById('status').textContent = '初期化中...';
   swe = await SwissEPH.init();

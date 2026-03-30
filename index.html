@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <div class="row">
+    <div class="row location-select" id="natalLocSelect">
       <div>
         <label>都道府県</label>
         <select id="pref"></select>
@@ -91,6 +91,23 @@
         <label>市区町村</label>
         <select id="city"></select>
       </div>
+    </div>
+    <div class="row location-coord" id="natalLocCoord" style="display:none;">
+      <div>
+        <label>緯度</label>
+        <input type="number" id="natalLat" step="any" placeholder="37.787" min="-90" max="90">
+      </div>
+      <div>
+        <label>経度</label>
+        <input type="number" id="natalLng" step="any" placeholder="-122.399" min="-180" max="180">
+      </div>
+      <div>
+        <label>UTC±</label>
+        <input type="number" id="natalUtc" step="0.5" placeholder="-7" min="-12" max="14">
+      </div>
+    </div>
+    <div class="row">
+      <button type="button" class="loc-toggle" data-target="natal" style="font-size:0.8rem; padding:0.25rem 0.5rem; color:#666; border:1px solid #ccc; background:#fafafa;">緯度経度で入力</button>
     </div>
 
     <div class="row">
@@ -160,7 +177,7 @@
         <input type="number" id="lrMonth" min="1" max="12">
       </div>
     </div>
-    <div class="row">
+    <div class="row location-select" id="lrLocSelect">
       <div>
         <label>都道府県</label>
         <select id="lrPref"></select>
@@ -169,6 +186,23 @@
         <label>市区町村</label>
         <select id="lrCity"></select>
       </div>
+    </div>
+    <div class="row location-coord" id="lrLocCoord" style="display:none;">
+      <div>
+        <label>緯度</label>
+        <input type="number" id="lrLat" step="any" placeholder="37.787" min="-90" max="90">
+      </div>
+      <div>
+        <label>経度</label>
+        <input type="number" id="lrLng" step="any" placeholder="-122.399" min="-180" max="180">
+      </div>
+      <div>
+        <label>UTC±</label>
+        <input type="number" id="lrUtc" step="0.5" placeholder="-7" min="-12" max="14">
+      </div>
+    </div>
+    <div class="row">
+      <button type="button" class="loc-toggle" data-target="lr" style="font-size:0.8rem; padding:0.25rem 0.5rem; color:#666; border:1px solid #ccc; background:#fafafa;">緯度経度で入力</button>
     </div>
     <div class="row">
       <button id="calcLunar" disabled>計算</button>
@@ -190,7 +224,7 @@
         <input type="number" id="srYear" min="1900" max="2100">
       </div>
     </div>
-    <div class="row">
+    <div class="row location-select" id="srLocSelect">
       <div>
         <label>都道府県</label>
         <select id="srPref"></select>
@@ -199,6 +233,23 @@
         <label>市区町村</label>
         <select id="srCity"></select>
       </div>
+    </div>
+    <div class="row location-coord" id="srLocCoord" style="display:none;">
+      <div>
+        <label>緯度</label>
+        <input type="number" id="srLat" step="any" placeholder="37.787" min="-90" max="90">
+      </div>
+      <div>
+        <label>経度</label>
+        <input type="number" id="srLng" step="any" placeholder="-122.399" min="-180" max="180">
+      </div>
+      <div>
+        <label>UTC±</label>
+        <input type="number" id="srUtc" step="0.5" placeholder="-7" min="-12" max="14">
+      </div>
+    </div>
+    <div class="row">
+      <button type="button" class="loc-toggle" data-target="sr" style="font-size:0.8rem; padding:0.25rem 0.5rem; color:#666; border:1px solid #ccc; background:#fafafa;">緯度経度で入力</button>
     </div>
     <div class="row">
       <button id="calcSolarChart" disabled>チャート</button>
@@ -238,7 +289,7 @@
           <input type="number" id="synAMinute" placeholder="0" min="0" max="59">
         </div>
       </div>
-      <div class="row">
+      <div class="row location-select" id="synALocSelect">
         <div>
           <label>都道府県</label>
           <select id="synAPref"></select>
@@ -247,6 +298,23 @@
           <label>市区町村</label>
           <select id="synACity"></select>
         </div>
+      </div>
+      <div class="row location-coord" id="synALocCoord" style="display:none;">
+        <div>
+          <label>緯度</label>
+          <input type="number" id="synALat" step="any" placeholder="37.787" min="-90" max="90">
+        </div>
+        <div>
+          <label>経度</label>
+          <input type="number" id="synALng" step="any" placeholder="-122.399" min="-180" max="180">
+        </div>
+        <div>
+          <label>UTC±</label>
+          <input type="number" id="synAUtc" step="0.5" placeholder="-7" min="-12" max="14">
+        </div>
+      </div>
+      <div class="row">
+        <button type="button" class="loc-toggle" data-target="synA" style="font-size:0.8rem; padding:0.25rem 0.5rem; color:#666; border:1px solid #ccc; background:#fafafa;">緯度経度で入力</button>
       </div>
     </details>
     <details>
@@ -273,7 +341,7 @@
           <input type="number" id="synBMinute" placeholder="0" min="0" max="59">
         </div>
       </div>
-      <div class="row">
+      <div class="row location-select" id="synBLocSelect">
         <div>
           <label>都道府県</label>
           <select id="synBPref"></select>
@@ -282,6 +350,23 @@
           <label>市区町村</label>
           <select id="synBCity"></select>
         </div>
+      </div>
+      <div class="row location-coord" id="synBLocCoord" style="display:none;">
+        <div>
+          <label>緯度</label>
+          <input type="number" id="synBLat" step="any" placeholder="37.787" min="-90" max="90">
+        </div>
+        <div>
+          <label>経度</label>
+          <input type="number" id="synBLng" step="any" placeholder="-122.399" min="-180" max="180">
+        </div>
+        <div>
+          <label>UTC±</label>
+          <input type="number" id="synBUtc" step="0.5" placeholder="-7" min="-12" max="14">
+        </div>
+      </div>
+      <div class="row">
+        <button type="button" class="loc-toggle" data-target="synB" style="font-size:0.8rem; padding:0.25rem 0.5rem; color:#666; border:1px solid #ccc; background:#fafafa;">緯度経度で入力</button>
       </div>
     </details>
     <div class="row">
