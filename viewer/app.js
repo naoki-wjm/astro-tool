@@ -1726,16 +1726,18 @@ function saveChartImage(svgEl, legendEl, filename) {
     });
   }
 
+  const scale = 2;
   const legendHeight = legendItems.length > 0 ? 50 : 0;
   const svgSize = 600;
   const canvas = document.createElement("canvas");
-  canvas.width = svgSize;
-  canvas.height = svgSize + legendHeight;
+  canvas.width = svgSize * scale;
+  canvas.height = (svgSize + legendHeight) * scale;
   const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
 
   // 背景
   ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, svgSize, svgSize + legendHeight);
 
   // 凡例を描画
   if (legendItems.length > 0) {
