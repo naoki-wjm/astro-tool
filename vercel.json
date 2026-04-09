@@ -1,4 +1,6 @@
 {
+  "buildCommand": "",
+  "outputDirectory": ".",
   "redirects": [
     { "source": "/(.*)", "destination": "https://dreams.parallel.jp/astro/$1", "permanent": true }
   ]
