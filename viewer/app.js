@@ -156,6 +156,9 @@ async function init() {
 
   // ── リターンタブ初期化 ──
   initReturnTab();
+
+  // ── 画像保存ボタン ──
+  initSaveButtons();
 }
 
 // ── 都市選択 ──
@@ -249,6 +252,7 @@ function onCalculate() {
     // SVGホイール描画
     const wheelSvg = document.getElementById("wheelSvg");
     drawWheel(wheelSvg, currentChart, currentAspects);
+    document.getElementById("btnSaveNatal").style.display = "";
   } catch (e) {
     document.getElementById("status").textContent = `計算エラー: ${e.message}`;
     console.error(e);
@@ -839,6 +843,7 @@ function onTransitCalculate() {
     document.getElementById("transitLegendLabel").textContent = `トランジット (${tDateStr})`;
 
     document.getElementById("btnTransitCopy").disabled = false;
+    document.getElementById("btnSaveTransit").style.display = "";
     status.textContent = "計算完了";
   } catch (e) {
     status.textContent = `計算エラー: ${e.message}`;
@@ -1034,6 +1039,7 @@ function onSynCalculate() {
     document.getElementById("synLegendB").textContent = pB.name;
 
     document.getElementById("btnSynCopy").disabled = false;
+    document.getElementById("btnSaveSyn").style.display = "";
     status.textContent = "計算完了";
   } catch (e) {
     status.textContent = `計算エラー: ${e.message}`;
@@ -1587,6 +1593,7 @@ function renderReturnDisplay(type) {
 
     document.getElementById("lrLegend").style.display = "";
     document.getElementById("lrLegendLabel").textContent = `ルナリターン (${dt.dateStr})`;
+    document.getElementById("btnSaveLr").style.display = "";
   } else if (type === "sr") {
     if (!srReturnChart) return;
 
@@ -1599,6 +1606,7 @@ function renderReturnDisplay(type) {
 
     document.getElementById("srLegend").style.display = "";
     document.getElementById("srLegendLabel").textContent = `ソーラーリターン (${srReturnDateTime.dateStr})`;
+    document.getElementById("btnSaveSr").style.display = "";
   }
 }
 
@@ -1698,6 +1706,89 @@ function onSrCopyAll() {
   }
 
   copyToClipboard(text);
+}
+
+// ── チャート画像保存 ──
+
+function saveChartImage(svgEl, legendEl, filename) {
+  const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+  const bgColor = isDark ? "#0d1117" : "#f5f5f5";
+  const textColor = isDark ? "#8b949e" : "#6b7280";
+
+  // 凡例テキストを収集
+  const legendItems = [];
+  if (legendEl && legendEl.style.display !== "none") {
+    legendEl.querySelectorAll(".legend-item").forEach(item => {
+      const line = item.querySelector(".legend-line");
+      const color = getComputedStyle(line).backgroundColor;
+      const label = item.textContent.trim();
+      legendItems.push({ color, label });
+    });
+  }
+
+  const legendHeight = legendItems.length > 0 ? 50 : 0;
+  const svgSize = 600;
+  const canvas = document.createElement("canvas");
+  canvas.width = svgSize;
+  canvas.height = svgSize + legendHeight;
+  const ctx = canvas.getContext("2d");
+
+  // 背景
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 凡例を描画
+  if (legendItems.length > 0) {
+    ctx.font = '12px "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif';
+    let y = 20;
+    legendItems.forEach(item => {
+      ctx.fillStyle = item.color;
+      ctx.fillRect(16, y - 6, 18, 2);
+      ctx.fillStyle = textColor;
+      ctx.fillText(item.label, 40, y);
+      y += 20;
+    });
+  }
+
+  // SVG → Canvas
+  const svgData = new XMLSerializer().serializeToString(svgEl);
+  const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, legendHeight, svgSize, svgSize);
+    URL.revokeObjectURL(url);
+
+    canvas.toBlob(pngBlob => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(pngBlob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }, "image/png");
+  };
+  img.src = url;
+}
+
+function initSaveButtons() {
+  const buttons = [
+    { btn: "btnSaveNatal",   svg: "wheelSvg",        legend: null,             name: "natal" },
+    { btn: "btnSaveSyn",     svg: "synWheelSvg",     legend: "synLegend",      name: "synastry" },
+    { btn: "btnSaveTransit", svg: "transitWheelSvg", legend: "transitLegend",  name: "transit" },
+    { btn: "btnSaveLr",      svg: "lrWheelSvg",      legend: "lrLegend",       name: "lunar-return" },
+    { btn: "btnSaveSr",      svg: "srWheelSvg",      legend: "srLegend",       name: "solar-return" },
+  ];
+  buttons.forEach(({ btn, svg, legend, name }) => {
+    const el = document.getElementById(btn);
+    if (!el) return;
+    el.addEventListener("click", () => {
+      const svgEl = document.getElementById(svg);
+      const legendEl = legend ? document.getElementById(legend) : null;
+      const now = new Date();
+      const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
+      saveChartImage(svgEl, legendEl, `astro-${name}-${ts}.png`);
+    });
+  });
 }
 
 // ── 起動 ──

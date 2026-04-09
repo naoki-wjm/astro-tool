@@ -277,6 +277,22 @@ input:focus, select:focus {
   aspect-ratio: 1;
 }
 
+.btn-save-chart {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin-top: 0.4rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+.btn-save-chart:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
 /* ── 二重円凡例 ── */
 .wheel-legend {
   display: flex;
