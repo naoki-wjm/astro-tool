@@ -310,6 +310,16 @@ input:focus, select:focus {
 
 @media (max-width: 900px) {
   .panels { grid-template-columns: 1fr; }
+
+  .col-wheel {
+    flex-direction: column;
+    align-items: center;
+  }
+  .wheel-legend {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
 }
 
 .panel {
