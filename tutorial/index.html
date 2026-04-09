@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>はじめての占星術 — Astro Tool</title>
+<meta name="description" content="質問に答えるだけでホロスコープの読み解き依頼文が完成するかんたんモード。占星術がはじめての方に。">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --bg: #0e0e1a;
+    --bg-card: #1c1c30;
+    --bg-input: #25253f;
+    --border: #444466;
+    --border-glow: #7a6abb;
+    --text: #eae8f2;
+    --text-dim: #b0adc4;
+    --text-bright: #ffffff;
+    --gold: #e8c860;
+    --gold-dim: #c8a848;
+    --purple: #aa8ee8;
+    --accent: #7c3aed;
+    --accent-hover: #6d28d9;
+    --success: #4ade80;
+    --success-bg: #1a3a2a;
+  }
+
+  [data-theme="light"] {
+    --bg: #f5f5f0;
+    --bg-card: #ffffff;
+    --bg-input: #f0f0f0;
+    --border: #d1d5db;
+    --border-glow: #9b8ec4;
+    --text: #1f2937;
+    --text-dim: #6b7280;
+    --text-bright: #000000;
+    --gold: #b8941a;
+    --gold-dim: #a08018;
+    --purple: #7c3aed;
+    --success: #16a34a;
+    --success-bg: #dcfce7;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── ヘッダー ── */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-size: 1.5rem;
+    color: var(--gold);
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .back-link {
+    font-size: 0.85rem;
+    color: var(--purple);
+    text-decoration: none;
+  }
+
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+
+  .intro {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  #status {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+  }
+
+  /* ── ステップ共通 ── */
+  .step { display: none; }
+  .step.active { display: block; }
+
+  .step-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+  }
+
+  .question {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-bright);
+    margin-bottom: 1.2rem;
+  }
+
+  /* ── 選択肢 ── */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .options label {
+    display: block;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.95rem;
+  }
+
+  .options label:hover {
+    border-color: var(--border-glow);
+  }
+
+  .options input[type="radio"] {
+    margin-right: 0.5rem;
+    accent-color: var(--purple);
+  }
+
+  .options label:has(input:checked) {
+    border-color: var(--purple);
+    background: var(--bg-input);
+  }
+
+  /* ── フォーム ── */
+  .form-section {
+    margin-top: 1.5rem;
+  }
+
+  .form-section h3 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    align-items: end;
+  }
+
+  .form-row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .form-row label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  .form-row input,
+  .form-row select {
+    padding: 0.5rem;
+    font-size: 0.95rem;
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .form-row input[type="number"] { width: 5rem; }
+  .form-row select { min-width: 8rem; }
+
+  .time-unknown {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 0.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .time-unknown input {
+    accent-color: var(--purple);
+    margin-right: 0.3rem;
+  }
+
+  .loc-toggle {
+    background: none;
+    border: none;
+    color: var(--purple);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 0.75rem;
+    font-family: inherit;
+  }
+
+  .person-section {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: var(--bg-card);
+  }
+
+  .person-section h4 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+
+  /* ── 保存済みチャート選択 ── */
+  .saved-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .saved-section h3 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gold);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .saved-section select {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 0.95rem;
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .saved-section .hint {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 0.4rem;
+  }
+
+  /* ── ナビボタン ── */
+  .nav-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .btn {
+    padding: 0.65rem 1.4rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+
+  .btn-back {
+    background: var(--bg-card);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  .btn-next {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-next:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-save {
+    background: var(--bg-card);
+    color: var(--gold);
+    border: 1px solid var(--gold-dim);
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+  }
+
+  /* ── 結果 ── */
+  .copy-instruction {
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  #resultText {
+    width: 100%;
+    height: 300px;
+    font-family: "Consolas", "Menlo", monospace;
+    font-size: 0.82rem;
+    padding: 1rem;
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    resize: vertical;
+  }
+
+  .btn-copy {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.65rem 1.8rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .save-result {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: none;
+  }
+
+  .save-result label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  .save-result input {
+    padding: 0.5rem;
+    font-size: 0.95rem;
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── フッター ── */
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  footer a {
+    color: var(--purple);
+    text-decoration: none;
+  }
+
+  @media (max-width: 600px) {
+    .container { padding: 1.5rem 1rem 3rem; }
+    .page-header h1 { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>はじめての占星術</h1>
+    <div class="header-actions">
+      <a href="../" class="back-link">Astro Tool</a>
+      <button class="theme-toggle" id="themeToggle" title="テーマ切替">明/暗</button>
+    </div>
+  </div>
+
+  <p class="intro">質問に答えていくと、AIに聞くための文章が完成します。<br>保存済みのチャートデータがあれば、入力を省略できます。</p>
+
+  <div id="status">読み込み中...</div>
+
+  <!-- Step 1: 何を知りたい？ -->
+  <div class="step active" id="step1">
+    <div class="step-label">Step 1 / 4</div>
+    <p class="question">何について知りたいですか？</p>
+    <div class="options">
+      <label><input type="radio" name="category" value="personality"><span>自分の性格・強み・向いていること</span></label>
+      <label><input type="radio" name="category" value="compatibility"><span>誰かとの相性</span></label>
+      <label><input type="radio" name="category" value="yearly"><span>今年の流れ</span></label>
+      <label><input type="radio" name="category" value="monthly"><span>今月の流れ</span></label>
+      <label><input type="radio" name="category" value="daily"><span>特定の日の運勢</span></label>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-next" id="toStep2" disabled>次へ</button>
+    </div>
+  </div>
+
+  <!-- Step 2: 詳細選択 -->
+  <div class="step" id="step2">
+    <div class="step-label">Step 2 / 4</div>
+    <p class="question" id="step2Question">詳しく教えてください</p>
+    <div class="options" id="step2Options"></div>
+    <div class="nav-buttons">
+      <button class="btn btn-back" id="backTo1">戻る</button>
+      <button class="btn btn-next" id="toStep3" disabled>次へ</button>
+    </div>
+  </div>
+
+  <!-- Step 3: 入力フォーム -->
+  <div class="step" id="step3">
+    <div class="step-label">Step 3 / 4</div>
+    <p class="question">情報を入力してください</p>
+
+    <!-- 自分の情報（相性以外） -->
+    <div id="selfForm" class="form-section">
+      <div class="saved-section" id="selfSaved">
+        <h3>保存済みチャートから選ぶ</h3>
+        <select id="selfChartSelect"><option value="">-- 手動で入力する --</option></select>
+        <div class="hint">Astro Viewer で保存したチャートが表示されます</div>
+      </div>
+      <div id="selfManualForm">
+        <h3>あなたの情報</h3>
+        <div class="form-row">
+          <div><label>生まれた年</label><input type="number" id="birthYear" placeholder="1990" min="1900" max="2100"></div>
+          <div><label>月</label><input type="number" id="birthMonth" placeholder="1" min="1" max="12"></div>
+          <div><label>日</label><input type="number" id="birthDay" placeholder="1" min="1" max="31"></div>
+        </div>
+        <div class="form-row">
+          <div><label>生まれた時刻</label><input type="number" id="birthHour" placeholder="12" min="0" max="23"></div>
+          <div><label>分</label><input type="number" id="birthMinute" placeholder="0" min="0" max="59"></div>
+        </div>
+        <div class="time-unknown">
+          <label><input type="checkbox" id="timeUnknown"> 時刻が分からない（12時で計算します）</label>
+        </div>
+        <div id="birthLocSelect" class="form-row">
+          <div><label>生まれた都道府県</label><select id="birthPref"></select></div>
+          <div><label>市区町村</label><select id="birthCity"></select></div>
+        </div>
+        <div id="birthLocCoord" class="form-row" style="display:none">
+          <div><label>緯度</label><input type="number" id="birthLat" step="0.0001" placeholder="35.6762"></div>
+          <div><label>経度</label><input type="number" id="birthLng" step="0.0001" placeholder="139.6503"></div>
+          <div><label>UTC差</label><input type="number" id="birthTz" step="0.5" value="9"></div>
+        </div>
+        <button type="button" class="loc-toggle" id="birthLocToggle">緯度経度で入力</button>
+      </div>
+    </div>
+
+    <!-- 相性用：2人分 -->
+    <div id="compatibilityForm" class="form-section" style="display: none;">
+      <div class="person-section">
+        <h4>1人目（あなた）</h4>
+        <div class="saved-section">
+          <select id="personAChartSelect"><option value="">-- 手動で入力する --</option></select>
+        </div>
+        <div id="personAManualForm">
+          <div class="form-row">
+            <div><label>生まれた年</label><input type="number" id="personAYear" placeholder="1990" min="1900" max="2100"></div>
+            <div><label>月</label><input type="number" id="personAMonth" placeholder="1" min="1" max="12"></div>
+            <div><label>日</label><input type="number" id="personADay" placeholder="1" min="1" max="31"></div>
+          </div>
+          <div class="form-row">
+            <div><label>生まれた時刻</label><input type="number" id="personAHour" placeholder="12" min="0" max="23"></div>
+            <div><label>分</label><input type="number" id="personAMinute" placeholder="0" min="0" max="59"></div>
+          </div>
+          <div class="time-unknown">
+            <label><input type="checkbox" id="personATimeUnknown"> 時刻が分からない</label>
+          </div>
+          <div id="personALocSelect" class="form-row">
+            <div><label>生まれた都道府県</label><select id="personAPref"></select></div>
+            <div><label>市区町村</label><select id="personACity"></select></div>
+          </div>
+          <div id="personALocCoord" class="form-row" style="display:none">
+            <div><label>緯度</label><input type="number" id="personALat" step="0.0001" placeholder="35.6762"></div>
+            <div><label>経度</label><input type="number" id="personALng" step="0.0001" placeholder="139.6503"></div>
+            <div><label>UTC差</label><input type="number" id="personATz" step="0.5" value="9"></div>
+          </div>
+          <button type="button" class="loc-toggle" id="personALocToggle">緯度経度で入力</button>
+        </div>
+      </div>
+      <div class="person-section">
+        <h4>2人目（相手）</h4>
+        <div class="saved-section">
+          <select id="personBChartSelect"><option value="">-- 手動で入力する --</option></select>
+        </div>
+        <div id="personBManualForm">
+          <div class="form-row">
+            <div><label>生まれた年</label><input type="number" id="personBYear" placeholder="1990" min="1900" max="2100"></div>
+            <div><label>月</label><input type="number" id="personBMonth" placeholder="1" min="1" max="12"></div>
+            <div><label>日</label><input type="number" id="personBDay" placeholder="1" min="1" max="31"></div>
+          </div>
+          <div class="form-row">
+            <div><label>生まれた時刻</label><input type="number" id="personBHour" placeholder="12" min="0" max="23"></div>
+            <div><label>分</label><input type="number" id="personBMinute" placeholder="0" min="0" max="59"></div>
+          </div>
+          <div class="time-unknown">
+            <label><input type="checkbox" id="personBTimeUnknown"> 時刻が分からない</label>
+          </div>
+          <div id="personBLocSelect" class="form-row">
+            <div><label>生まれた都道府県</label><select id="personBPref"></select></div>
+            <div><label>市区町村</label><select id="personBCity"></select></div>
+          </div>
+          <div id="personBLocCoord" class="form-row" style="display:none">
+            <div><label>緯度</label><input type="number" id="personBLat" step="0.0001" placeholder="35.6762"></div>
+            <div><label>経度</label><input type="number" id="personBLng" step="0.0001" placeholder="139.6503"></div>
+            <div><label>UTC差</label><input type="number" id="personBTz" step="0.5" value="9"></div>
+          </div>
+          <button type="button" class="loc-toggle" id="personBLocToggle">緯度経度で入力</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 年選択（今年の流れ） -->
+    <div id="yearForm" class="form-section" style="display: none;">
+      <h3>何年の運勢？</h3>
+      <div class="form-row">
+        <div><label>年</label><input type="number" id="targetYear" min="1900" max="2100"></div>
+      </div>
+    </div>
+
+    <!-- 年月選択（今月の流れ）+ 現在地 -->
+    <div id="monthForm" class="form-section" style="display: none;">
+      <h3>何年何月の運勢？</h3>
+      <div class="form-row">
+        <div><label>年</label><input type="number" id="targetMonthYear" min="1900" max="2100"></div>
+        <div><label>月</label><input type="number" id="targetMonth" min="1" max="12"></div>
+      </div>
+      <h3>今いる場所</h3>
+      <div id="currentLocSelect" class="form-row">
+        <div><label>都道府県</label><select id="currentPref"></select></div>
+        <div><label>市区町村</label><select id="currentCity"></select></div>
+      </div>
+      <div id="currentLocCoord" class="form-row" style="display:none">
+        <div><label>緯度</label><input type="number" id="currentLat" step="0.0001" placeholder="35.6762"></div>
+        <div><label>経度</label><input type="number" id="currentLng" step="0.0001" placeholder="139.6503"></div>
+        <div><label>UTC差</label><input type="number" id="currentTz" step="0.5" value="9"></div>
+      </div>
+      <button type="button" class="loc-toggle" id="currentLocToggle">緯度経度で入力</button>
+    </div>
+
+    <!-- 日付選択（特定の日） -->
+    <div id="dayForm" class="form-section" style="display: none;">
+      <h3>何日の運勢？</h3>
+      <div class="form-row">
+        <div><label>年</label><input type="number" id="targetDayYear" min="1900" max="2100"></div>
+        <div><label>月</label><input type="number" id="targetDayMonth" min="1" max="12"></div>
+        <div><label>日</label><input type="number" id="targetDayDay" min="1" max="31"></div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-back" id="backTo2">戻る</button>
+      <button class="btn btn-next" id="calculate">占う</button>
+    </div>
+  </div>
+
+  <!-- Step 4: 結果 -->
+  <div class="step" id="step4">
+    <div class="step-label">Step 4 / 4</div>
+    <p class="question">完成！</p>
+    <div class="copy-instruction">
+      <p>この文章をコピーして、<strong>Claude</strong>や<strong>ChatGPT</strong>に貼り付けてください。</p>
+    </div>
+    <textarea id="resultText" readonly></textarea>
+    <button class="btn-copy" id="copyResult">コピーする</button>
+
+    <div class="save-result" id="saveResult">
+      <label>このチャートを保存する（名前を入力）</label>
+      <input type="text" id="saveName" placeholder="例：自分">
+      <button class="btn btn-save" id="saveChart">保存</button>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-back" id="backTo3">入力に戻る</button>
+      <button class="btn btn-back" id="restart">最初からやり直す</button>
+    </div>
+  </div>
+
+  <footer>
+    <a href="../">Astro Tool トップ</a> /
+    <a href="../viewer/">Astro Viewer</a> /
+    <a href="https://github.com/naoki-wjm/astro-tool" target="_blank" rel="noopener">ソースコード (AGPL-3.0)</a>
+  </footer>
+
+</div>
+
+<script type="module" src="./tutorial.js"></script>
+</body>
+</html>

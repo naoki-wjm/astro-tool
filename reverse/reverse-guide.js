@@ -685,7 +685,7 @@ function buildReverseUrl() {
     params.set('p_' + extraPlanet, 'optional');
   }
 
-  return './reverse.html?' + params.toString();
+  return './?'+ params.toString();
 }
 
 // ============================================================
