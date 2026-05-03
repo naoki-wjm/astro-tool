@@ -1612,7 +1612,7 @@ function renderReturnDisplay(type) {
     drawDoubleWheel(document.getElementById("lrWheelSvg"), lrNatalChart, chart.planets, cross, { outerColor: "#E67E22" });
 
     document.getElementById("lrLegend").style.display = "";
-    document.getElementById("lrLegendLabel").textContent = `ルナリターン (${dt.dateStr})`;
+    document.getElementById("lrLegendLabel").textContent = `ルナリターン (${dt.dateStr} ${dt.timeStr} ${dt.tzLabel})`;
     document.getElementById("btnSaveLr").style.display = "";
   } else if (type === "sr") {
     if (!srReturnChart) return;
@@ -1625,7 +1625,7 @@ function renderReturnDisplay(type) {
     drawDoubleWheel(document.getElementById("srWheelSvg"), srNatalChart, srReturnChart.planets, srCrossAspects, { outerColor: "#E67E22" });
 
     document.getElementById("srLegend").style.display = "";
-    document.getElementById("srLegendLabel").textContent = `ソーラーリターン (${srReturnDateTime.dateStr})`;
+    document.getElementById("srLegendLabel").textContent = `ソーラーリターン (${srReturnDateTime.dateStr} ${srReturnDateTime.timeStr} ${srReturnDateTime.tzLabel})`;
     document.getElementById("btnSaveSr").style.display = "";
   }
 }
