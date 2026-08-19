@@ -2,6 +2,7 @@
 // Reverse Horoscope — 逆引きホロスコープ検索エンジン
 // ============================================================
 import SwissEPH from '../sweph/sweph-wasm.js';
+import { loadEphemeris } from '../shared/ephe.js?v=20260819b';
 
 // ============================================================
 // Constants
@@ -65,7 +66,7 @@ async function initWasm() {
 
   try {
     swe = await SwissEPH.init();
-    try { await swe.swe_set_ephe_path(); } catch (e) { /* OK for Moshier */ }
+    await loadEphemeris(swe);  // 自前 ../sweph/ephe/ → 作者サイト の順。失敗しても続行（Moshier なら不要）
 
     statusEl.style.display = 'none';
     formEl.style.display = 'block';

@@ -5,13 +5,14 @@
  */
 
 import SwissEPH from "../sweph/sweph-wasm.js";
+import { loadEphemeris } from "../shared/ephe.js?v=20260819b";
 
 // ── sweph-wasm インスタンス ──
 let swe = null;
 
 export async function initSwe() {
   swe = await SwissEPH.init();
-  await swe.swe_set_ephe_path();
+  await loadEphemeris(swe);  // 自前 ../sweph/ephe/ → 作者サイト の順。失敗しても続行
   return swe;
 }
 
