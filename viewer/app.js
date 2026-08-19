@@ -3,6 +3,10 @@
  *
  * 初期化、UI イベント、テーブル描画を管理する。
  * SVGホイール描画は chart.js に分離。
+ *
+ * ※ import 先と index.html の script/link には ?v=YYYYMMDD を付けてある（iOS Safari が
+ *   ヘッダー無しの静的ファイルを強くキャッシュするため）。JS/CSS を更新して配置するときは
+ *   index.html と下の import の v を同じ日付に揃えて上げること。
  */
 
 import { initSwe, calculateNatal, calculateAspects, calculateDistribution,
@@ -12,11 +16,11 @@ import { initSwe, calculateNatal, calculateAspects, calculateDistribution,
          formatNatalText, formatTransitText, formatSynastryText,
          formatLunarReturnText, formatSolarReturnText,
          calculateProgression, findNextProgressedIngress, formatProgressionText, fmtArc,
-         fmt, fmtText, SIGNS, HOUSE_SYSTEMS, PLANETS } from "./calc.js";
+         fmt, fmtText, SIGNS, HOUSE_SYSTEMS, PLANETS } from "./calc.js?v=20260819";
 import { loadCharts, loadCities, getChartsData, getSettings, addChart, removeChart,
          getChartList, getChartById, getPrefectures, getCities, findCity, updateSettings,
-         exportData, importData } from "../shared/data.js";
-import { drawWheel, drawDoubleWheel } from "./chart.js";
+         exportData, importData } from "../shared/data.js?v=20260819";
+import { drawWheel, drawDoubleWheel } from "./chart.js?v=20260819";
 
 let currentChart = null;
 let currentAspects = null;
