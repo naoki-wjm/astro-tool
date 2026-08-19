@@ -11,6 +11,7 @@ import { initSwe, calculateNatal, calculateAspects, calculateDistribution,
          calcYearlyRange, formatYearlyRangeText,
          formatNatalText, formatTransitText, formatSynastryText,
          formatLunarReturnText, formatSolarReturnText,
+         calculateProgression, findNextProgressedIngress, formatProgressionText, fmtArc,
          fmt, fmtText, SIGNS, HOUSE_SYSTEMS, PLANETS } from "./calc.js";
 import { loadCharts, loadCities, getChartsData, getSettings, addChart, removeChart,
          getChartList, getChartById, getPrefectures, getCities, findCity, updateSettings,
@@ -51,6 +52,15 @@ let srReturnDateTime = null;
 let srCrossAspects = null;
 let srLocationLabel = "";
 let srYearlyText = "";
+
+// プログレッション用
+let pgNatalChart = null;
+let pgNatalParams = null;
+let pgChart = null;          // calculateProgression の戻り値
+let pgCrossAspects = null;   // 進行×出生
+let pgAspects = null;        // 進行同士
+let pgIngresses = [];        // 次のサイン移動 [{ name, signName, dateStr, ageYears, currentSignName }]
+let pgTargetDateStr = "";
 
 // ── 初期化 ──
 
@@ -98,6 +108,7 @@ async function init() {
     document.getElementById("btnSynCalc").disabled = false;
     document.getElementById("btnLrCalc").disabled = false;
     document.getElementById("btnSrCalc").disabled = false;
+    document.getElementById("btnPgCalc").disabled = false;
   } catch (e) {
     status.textContent = `初期化エラー: ${e.message}`;
     console.error(e);
@@ -452,7 +463,7 @@ async function onDelete() {
 
 // ── オプション天体 ──
 
-const OPT_BODY_SELECTORS = ["#optionalBodies", "#trOptionalBodies", "#synOptionalBodies", "#lrOptionalBodies", "#srOptionalBodies"];
+const OPT_BODY_SELECTORS = ["#optionalBodies", "#trOptionalBodies", "#synOptionalBodies", "#lrOptionalBodies", "#srOptionalBodies", "#pgOptionalBodies"];
 
 function onOptionalBodyChange() { syncOptionalBodies("#optionalBodies"); }
 function onOptionalBodyChangeSync() { syncOptionalBodies("#trOptionalBodies"); }
@@ -483,7 +494,8 @@ function onCopyAll() {
 }
 
 function copySectionText(section) {
-  if (!currentChart) return;
+  // ネイタルタブのセクションだけは currentChart が必要（他タブは各自の状態を見る）
+  if (["planets", "distribution", "aspects", "houses"].includes(section) && !currentChart) return;
   let text = "";
 
   switch (section) {
@@ -685,6 +697,55 @@ function copySectionText(section) {
     }
     case "sr-yearly": {
       text = srYearlyText;
+      break;
+    }
+
+    // プログレッション
+    case "pg-planets": {
+      if (!pgChart) return;
+      text = pgChart.planets.map(p => {
+        const retro = p.retrograde ? " R" : "";
+        return `${p.name} ${fmtText(p.lon)} (N${p.house}H)${retro}`;
+      }).join("\n") + `\n\n進行ASC ${fmtText(pgChart.angles.asc)} / 進行MC ${fmtText(pgChart.angles.mc)}`;
+      break;
+    }
+    case "pg-cross": {
+      if (!pgCrossAspects) return;
+      text = pgCrossAspects.map(a => {
+        const orbStr = Math.round(a.aspect.orb * 10) / 10;
+        return `P.${a.planet2.name}${a.aspect.symbol}N.${a.planet1.name}(${orbStr}°)`;
+      }).join(" / ");
+      break;
+    }
+    case "pg-aspects": {
+      if (!pgAspects) return;
+      text = pgAspects.map(a => {
+        const orbStr = Math.round(a.aspect.orb * 10) / 10;
+        return `P.${a.planet1.name}${a.aspect.symbol}P.${a.planet2.name}(${orbStr}°)`;
+      }).join(" / ");
+      break;
+    }
+    case "pg-natal": {
+      if (!pgNatalChart) return;
+      const pnl = pgNatalChart.planets.map(p => {
+        const retro = p.retrograde ? " R" : "";
+        return `${p.name} ${fmtText(p.lon)} (${p.house}H)${retro}`;
+      });
+      pnl.push("");
+      pnl.push(`ASC ${fmtText(pgNatalChart.angles.asc)} / MC ${fmtText(pgNatalChart.angles.mc)}`);
+      text = pnl.join("\n");
+      break;
+    }
+    case "pg-houses": {
+      if (!pgChart) return;
+      const phl = ["", "1H (ASC)", "2H", "3H", "4H (IC)", "5H", "6H",
+                   "7H (DSC)", "8H", "9H", "10H (MC)", "11H", "12H"];
+      text = Array.from({length: 12}, (_, i) => `${phl[i+1]}: ${fmtText(pgChart.cusps[i+1])}`).join("\n");
+      break;
+    }
+    case "pg-ingress": {
+      if (!pgIngresses.length) return;
+      text = pgIngresses.map(ing => `進行${ing.name}: ${ing.dateStr} 頃 ${ing.signName}入り（${ing.ageYears.toFixed(1)} 歳）`).join("\n");
       break;
     }
   }
@@ -1203,6 +1264,14 @@ function recalculateAspects(orbs, minorAspects) {
     );
     renderReturnDisplay("sr");
   }
+  // プログレッション（オーブはトランジット値を流用）
+  if (pgNatalChart && pgChart) {
+    pgCrossAspects = calculateCrossAspects(
+      pgNatalChart.planets, pgChart.planets, orbs.transit, minorAspects, pgNatalChart.angles
+    );
+    pgAspects = calculateAspects(pgChart.planets, orbs.transit, minorAspects);
+    renderReturnDisplay("pg");
+  }
 }
 
 // ── テーマ ──
@@ -1243,6 +1312,9 @@ function initReturnTab() {
   document.getElementById("lrYear").value = now.getFullYear();
   document.getElementById("lrMonth").value = now.getMonth() + 1;
   document.getElementById("srYear").value = now.getFullYear();
+  // プログレッションの対象日は今日
+  document.getElementById("pgDate").value =
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   // 保存済みチャート
   refreshReturnNatalSelects();
@@ -1250,13 +1322,14 @@ function initReturnTab() {
   // 場所入力（都道府県/緯度経度）- ネイタル + リターン場所
   initLocInput("lrNatal");
   initLocInput("srNatal");
+  initLocInput("pgNatal");
   initLocInput("lrRet");
   initLocInput("srRet");
 
   // オプション天体チェックボックス
   const settings = getSettings();
   const optBodies = settings.optionalBodies || {};
-  for (const sel of ["#lrOptionalBodies", "#srOptionalBodies"]) {
+  for (const sel of ["#lrOptionalBodies", "#srOptionalBodies", "#pgOptionalBodies"]) {
     for (const cb of document.querySelectorAll(`${sel} input[type=checkbox]`)) {
       cb.checked = !!optBodies[cb.dataset.body];
       cb.addEventListener("change", () => syncOptionalBodies(sel));
@@ -1276,14 +1349,17 @@ function initReturnTab() {
   // ネイタルチャート選択
   document.getElementById("lrNatalSelect").addEventListener("change", () => onReturnNatalSelect("lr"));
   document.getElementById("srNatalSelect").addEventListener("change", () => onReturnNatalSelect("sr"));
+  document.getElementById("pgNatalSelect").addEventListener("change", () => onReturnNatalSelect("pg"));
 
   // 計算ボタン
   document.getElementById("btnLrCalc").addEventListener("click", onLunarReturnCalc);
   document.getElementById("btnSrCalc").addEventListener("click", onSolarReturnCalc);
+  document.getElementById("btnPgCalc").addEventListener("click", onProgressionCalc);
 
   // コピーボタン
   document.getElementById("btnLrCopy").addEventListener("click", onLrCopyAll);
   document.getElementById("btnSrCopy").addEventListener("click", onSrCopyAll);
+  document.getElementById("btnPgCopy").addEventListener("click", onPgCopyAll);
 
   // LR切替ボタン
   for (const btn of document.querySelectorAll("#lrSwitcher .btn-sm")) {
@@ -1391,7 +1467,7 @@ function setLocFromChart(prefix, location) {
 }
 
 function refreshReturnNatalSelects() {
-  for (const prefix of ["lr", "sr"]) {
+  for (const prefix of ["lr", "sr", "pg"]) {
     const sel = document.getElementById(`${prefix}NatalSelect`);
     sel.innerHTML = '<option value="">-- 手動入力 --</option>';
     for (const c of getChartList()) {
@@ -1595,6 +1671,81 @@ function onSolarReturnCalc() {
   }
 }
 
+// ── プログレッション計算 ──
+
+function onProgressionCalc() {
+  const status = document.getElementById("pgStatus");
+
+  const nParams = getReturnNatalParams("pg");
+  if (!nParams) { status.textContent = "ネイタルデータを入力してください"; return; }
+
+  const dateStr = document.getElementById("pgDate").value;
+  if (!dateStr) { status.textContent = "対象日を入力してください"; return; }
+  const [ty, tm, td] = dateStr.split("-").map(Number);
+
+  const settings = getSettings();
+  const opts = { optionalBodies: settings.optionalBodies };
+
+  try {
+    status.textContent = "計算中...";
+
+    pgNatalParams = nParams;
+    pgNatalChart = calculateNatal(nParams, opts);
+    pgNatalChart.params = nParams;
+
+    pgChart = calculateProgression(pgNatalChart, nParams, { year: ty, month: tm, day: td }, opts);
+    pgTargetDateStr = dateStr;
+
+    const orb = settings.orbs?.transit || 1;
+    pgCrossAspects = calculateCrossAspects(pgNatalChart.planets, pgChart.planets, orb, settings.minorAspects, pgNatalChart.angles);
+    pgAspects = calculateAspects(pgChart.planets, orb, settings.minorAspects);
+
+    // 次のサイン移動（進行太陽・進行月）
+    pgIngresses = [];
+    for (const id of [0, 1]) {
+      const cur = pgChart.planets.find(p => p.id === id);
+      const ing = findNextProgressedIngress(id, pgChart.jd, pgNatalChart.jd);
+      if (!cur || !ing) continue;
+      const dt = jdToLocalDateTime(ing.realJd, nParams.utcOffset);
+      pgIngresses.push({
+        id,
+        name: cur.name,
+        glyph: cur.glyph,
+        color: cur.color,
+        currentSignName: SIGNS[cur.sign].fullName,
+        signIndex: ing.signIndex,
+        signName: SIGNS[ing.signIndex].fullName,
+        dateStr: dt.dateStr.slice(0, 7).replace("-", "年") + "月",  // 月単位で十分（時刻・日の精度は意味が薄い）
+        ageYears: ing.ageYears,
+      });
+    }
+
+    renderReturnDisplay("pg");
+
+    document.getElementById("btnPgCopy").disabled = false;
+    status.textContent = "計算完了";
+  } catch (e) {
+    status.textContent = `計算エラー: ${e.message}`;
+    console.error(e);
+  }
+}
+
+function renderPgIngressTable() {
+  const tbody = document.querySelector("#tablePgIngress tbody");
+  tbody.innerHTML = "";
+  for (const ing of pgIngresses) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><span class="planet-glyph" style="color:${ing.color}">${ing.glyph}</span> 進行${ing.name}</td>
+      <td>${ing.currentSignName}</td>
+      <td><span style="color:${ing.color}">${SIGNS[ing.signIndex].glyph}</span> ${ing.signName}</td>
+      <td>${ing.dateStr} 頃</td>
+      <td>${ing.ageYears.toFixed(1)} 歳</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
 // ── リターン表示更新 ──
 
 function renderReturnDisplay(type) {
@@ -1627,6 +1778,46 @@ function renderReturnDisplay(type) {
     document.getElementById("srLegend").style.display = "";
     document.getElementById("srLegendLabel").textContent = `ソーラーリターン (${srReturnDateTime.dateStr} ${srReturnDateTime.timeStr} ${srReturnDateTime.tzLabel})`;
     document.getElementById("btnSaveSr").style.display = "";
+  } else if (type === "pg") {
+    if (!pgChart) return;
+
+    renderReturnPlanetsTable("#tablePgPlanets", pgChart);
+    renderReturnCrossAspectsTable("#tablePgCrossAspects", pgCrossAspects, "P");
+    renderPairAspectsTable("#tablePgAspects", pgAspects);
+    renderReturnNatalTable("#tablePgNatal", pgNatalChart);
+    renderReturnHousesTable("#tablePgHouses", pgChart);
+    renderPgIngressTable();
+
+    drawDoubleWheel(document.getElementById("pgWheelSvg"), pgNatalChart, pgChart.planets, pgCrossAspects, { outerColor: "#2EAF9B" });
+
+    document.getElementById("pgLegend").style.display = "";
+    document.getElementById("pgLegendLabel").textContent =
+      `プログレッション (${pgTargetDateStr}, ${pgChart.ageYears.toFixed(2)}歳)`;
+    document.getElementById("pgSolarArc").textContent = `太陽弧 ${fmtArc(pgChart.solarArc)}（進行MC ＝ 出生MC ＋ 太陽弧）`;
+    document.getElementById("btnSavePg").style.display = "";
+  }
+}
+
+/** 同一チャート内アスペクト表（天体1 / アスペクト / 天体2 / オーブ / 接近） */
+function renderPairAspectsTable(selector, aspects) {
+  const tbody = document.querySelector(`${selector} tbody`);
+  tbody.innerHTML = "";
+  for (const a of aspects) {
+    const tr = document.createElement("tr");
+    const typeClass = a.aspect.type === "conjunction" ? "conj"
+      : a.aspect.type === "soft" ? "soft"
+      : a.aspect.type === "hard" ? "hard" : "minor";
+    const orbSign = a.applying ? "+" : "-";
+    const appClass = a.applying ? "applying" : "separating";
+    const appMark = a.applying ? "▼" : "▲";
+    tr.innerHTML = `
+      <td><span class="planet-glyph" style="color:${a.planet1.color}">${a.planet1.glyph}</span> ${a.planet1.name}</td>
+      <td><span class="asp-badge ${typeClass}">${a.aspect.symbol} ${a.aspect.angle}°</span></td>
+      <td><span class="planet-glyph" style="color:${a.planet2.color}">${a.planet2.glyph}</span> ${a.planet2.name}</td>
+      <td>${orbSign}${a.aspect.orb.toFixed(2)}°</td>
+      <td class="${appClass}">${appMark}</td>
+    `;
+    tbody.appendChild(tr);
   }
 }
 
@@ -1728,6 +1919,19 @@ function onSrCopyAll() {
   copyToClipboard(text);
 }
 
+function onPgCopyAll() {
+  if (!pgChart || !pgNatalChart) return;
+
+  const hsName = HOUSE_SYSTEMS.find(h => h.code === pgNatalParams.houseSystem)?.name || "プラシーダス";
+  const natalLabel = pgNatalParams.name
+    ? `${pgNatalParams.name}`
+    : `${pgNatalParams.year}-${String(pgNatalParams.month).padStart(2, "0")}-${String(pgNatalParams.day).padStart(2, "0")}`;
+  const text = formatProgressionText(pgNatalChart, pgChart,
+    { targetDateStr: pgTargetDateStr, natalLabel, houseSystemName: hsName, ingresses: pgIngresses },
+    pgCrossAspects, pgAspects);
+  copyToClipboard(text);
+}
+
 // ── チャート画像保存 ──
 
 function saveChartImage(svgEl, legendEl, filename) {
@@ -1799,6 +2003,7 @@ function initSaveButtons() {
     { btn: "btnSaveTransit", svg: "transitWheelSvg", legend: "transitLegend",  name: "transit" },
     { btn: "btnSaveLr",      svg: "lrWheelSvg",      legend: "lrLegend",       name: "lunar-return" },
     { btn: "btnSaveSr",      svg: "srWheelSvg",      legend: "srLegend",       name: "solar-return" },
+    { btn: "btnSavePg",      svg: "pgWheelSvg",      legend: "pgLegend",       name: "progression" },
   ];
   buttons.forEach(({ btn, svg, legend, name }) => {
     const el = document.getElementById(btn);

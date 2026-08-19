@@ -650,6 +650,141 @@ export function calculateChartFromJd(jd, params, options = {}) {
   return { planets, cusps, angles, jd };
 }
 
+// ── プログレッション（一日一年法＝セカンダリープログレッション） ──
+
+/**
+ * 一日一年法の「1年」の長さ（日）。回帰年 365.2422 を採用。
+ * 365.25 派との差は 40 年で約 0.03 日（進行月で 1′未満）なので実用上どちらでも可。
+ */
+export const PROGRESSION_YEAR_DAYS = 365.2422;
+
+/**
+ * 黄経 MC から ARMC（赤経）を求める
+ * @param {number} mc - MC の黄経（度）
+ * @param {number} eps - 黄道傾斜（度）
+ * @returns {number} ARMC（度, 0-360）
+ */
+function mcToArmc(mc, eps) {
+  const rad = Math.PI / 180;
+  const armc = Math.atan2(Math.sin(mc * rad) * Math.cos(eps * rad), Math.cos(mc * rad)) / rad;
+  return (armc + 360) % 360;
+}
+
+/**
+ * セカンダリープログレッション（一日一年法）を計算
+ *
+ * - 出生後 1 日 ＝ 人生の 1 年。対象日の年齢（小数年）をそのまま日数として出生 JD に足す
+ * - 進行天体のハウス番号は出生カスプ基準（進行天体を出生図に重ねて読むため）
+ * - 進行 MC/ASC は太陽弧法: 進行MC ＝ 出生MC ＋（進行太陽 − 出生太陽）。進行 ASC とカスプは
+ *   進行 MC から ARMC を求めて swe_houses_armc で計算（出生地の緯度・同じハウス方式）
+ * - 対象日の時刻は正午 UT 固定（1 時間のズレ＝進行月で約 0.03′。UI は日付のみ）
+ *
+ * @param {object} natalChart - calculateNatal の戻り値（jd / planets / cusps / angles）
+ * @param {object} natalParams - { lat, lng, houseSystem }
+ * @param {object} target - { year, month, day } 対象日
+ * @param {object} options - { optionalBodies }
+ * @returns {object} { planets, cusps, angles, jd, targetJd, ageYears, solarArc }
+ */
+export function calculateProgression(natalChart, natalParams, target, options = {}) {
+  const { lat, lng, houseSystem = "P" } = natalParams;
+  const natalJd = natalChart.jd;
+
+  const targetJd = swe.swe_julday(target.year, target.month, target.day, 12, 1);
+  const ageYears = (targetJd - natalJd) / PROGRESSION_YEAR_DAYS;
+  const progJd = natalJd + ageYears;  // 「年」をそのまま「日」として足す
+
+  // 進行天体（位置は進行 JD、ハウス番号は出生カスプで付け直す）
+  const base = calculateChartFromJd(progJd, { lat, lng, houseSystem }, options);
+  const planets = base.planets.map(p => ({ ...p, house: getHouse(p.lon, natalChart.cusps) }));
+
+  // 太陽弧
+  const natalSun = natalChart.planets.find(p => p.id === 0);
+  const progSun = planets.find(p => p.id === 0);
+  const solarArc = ((progSun.lon - natalSun.lon) % 360 + 360) % 360;
+
+  // 進行 MC/ASC（太陽弧法）
+  const progMc = (natalChart.angles.mc + solarArc) % 360;
+  const eps = swe.swe_calc_ut(progJd, -1, CALC_FLAGS)[0];  // SE_ECL_NUT: r[0] = 真黄道傾斜
+  const armc = mcToArmc(progMc, eps);
+  const hr = swe.swe_houses_armc(armc, lat, eps, houseSystem);
+  const cusps = hr.cusps;
+  const angles = {
+    asc: cusps[1],
+    mc: hr.ascmc[1],
+    dsc: (cusps[1] + 180) % 360,
+    ic: (hr.ascmc[1] + 180) % 360,
+  };
+
+  return { planets, cusps, angles, jd: progJd, targetJd, ageYears, solarArc };
+}
+
+/**
+ * 天体が指定黄経を次に（順行で）通過する JD を探す（二分法）
+ * @param {number} planetId - 天体 ID
+ * @param {number} targetLon - 目標黄経（度）
+ * @param {number} startJd - 探索開始 JD
+ * @param {number} maxDays - 最大探索日数
+ * @param {number} step - 粗探索の刻み（日）
+ * @returns {number|null} 通過 JD
+ */
+function findNextCrossing(planetId, targetLon, startJd, maxDays, step = 0.25) {
+  const normDiff = (lon) => {
+    let d = lon - targetLon;
+    while (d > 180) d -= 360;
+    while (d <= -180) d += 360;
+    return d;
+  };
+  let prevDiff = normDiff(swe.swe_calc_ut(startJd, planetId, CALC_FLAGS)[0]);
+  for (let jd = startJd + step; jd <= startJd + maxDays; jd += step) {
+    const diff = normDiff(swe.swe_calc_ut(jd, planetId, CALC_FLAGS)[0]);
+    if (prevDiff < 0 && diff >= 0) {
+      let lo = jd - step, hi = jd;
+      for (let i = 0; i < 24; i++) {
+        const mid = (lo + hi) / 2;
+        if (normDiff(swe.swe_calc_ut(mid, planetId, CALC_FLAGS)[0]) < 0) lo = mid;
+        else hi = mid;
+      }
+      return (lo + hi) / 2;
+    }
+    prevDiff = diff;
+  }
+  return null;
+}
+
+/**
+ * 進行天体の次のサイン移動（イングレス）を求める
+ * @param {number} planetId - 天体 ID（0=太陽, 1=月 を想定）
+ * @param {number} progJd - 現在の進行 JD
+ * @param {number} natalJd - 出生 JD
+ * @returns {object|null} { signIndex, ageYears, realJd, progJd }
+ *   realJd は「出生からの進行日数＝年数」を暦日に戻した実際の日付（JD）
+ */
+export function findNextProgressedIngress(planetId, progJd, natalJd) {
+  const lonNow = swe.swe_calc_ut(progJd, planetId, CALC_FLAGS)[0];
+  const nextCusp = ((Math.floor(lonNow / 30) + 1) * 30) % 360;
+  // 進行太陽は約 1°/日 → 最長 31 日、進行月は約 13°/日 → 最長 3 日。余裕を見て探索
+  const maxDays = planetId === 1 ? 5 : 45;
+  const crossJd = findNextCrossing(planetId, nextCusp, progJd, maxDays, planetId === 1 ? 0.05 : 0.25);
+  if (crossJd === null) return null;
+  const ageYears = crossJd - natalJd;  // 進行日数 ＝ 年齢
+  return {
+    signIndex: (nextCusp / 30) % 12,
+    ageYears,
+    realJd: natalJd + ageYears * PROGRESSION_YEAR_DAYS,
+    progJd: crossJd,
+  };
+}
+
+/**
+ * 太陽弧を度分表記に
+ * @param {number} arc - 度
+ */
+export function fmtArc(arc) {
+  const d = Math.floor(arc);
+  const m = Math.floor((arc - d) * 60);
+  return `${d}°${String(m).padStart(2, "0")}'`;
+}
+
 /**
  * JDをローカル日時文字列に変換
  * @param {number} jd - ユリウス日（UTC）
@@ -1075,6 +1210,65 @@ export function formatSolarReturnText(natalChart, returnChart, returnDateTime, l
       return `SR.${a.planet2.name}${a.aspect.symbol}N.${a.planet1.name}(${orbStr}°)`;
     });
     lines.push(aspTexts2.join(" / "));
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * プログレッションのテキストコピー用文字列を生成
+ * @param {object} natalChart - ネイタルチャート
+ * @param {object} prog - calculateProgression の戻り値
+ * @param {object} info - { targetDateStr, natalLabel, houseSystemName, ingresses: [{ name, signName, dateStr, ageYears }] }
+ * @param {Array} crossAspects - 進行×出生（planet1=出生, planet2=進行）
+ * @param {Array} progAspects - 進行同士
+ */
+export function formatProgressionText(natalChart, prog, info, crossAspects, progAspects) {
+  const lines = [];
+  const hs = info.houseSystemName || "プラシーダス";
+
+  lines.push(`【プログレッション（一日一年法）】対象日 ${info.targetDateStr}（年齢 ${prog.ageYears.toFixed(2)} 歳）`);
+  if (info.natalLabel) lines.push(`ネイタル: ${info.natalLabel}`);
+  lines.push(`ハウス: ${hs}（進行天体のハウスは出生図基準、進行ASC/MCは太陽弧法）`);
+  lines.push(`太陽弧: ${fmtArc(prog.solarArc)}`);
+  lines.push("");
+
+  lines.push("■ 進行天体");
+  for (const p of prog.planets) {
+    const retro = p.retrograde ? " R" : "";
+    lines.push(`${p.name} ${fmtText(p.lon)} (N${p.house}H)${retro}`);
+  }
+  lines.push("");
+  lines.push(`進行ASC ${fmtText(prog.angles.asc)} / 進行MC ${fmtText(prog.angles.mc)}`);
+  lines.push("");
+
+  lines.push("■ ネイタルへのアスペクト (P→N)");
+  if (!crossAspects || crossAspects.length === 0) {
+    lines.push("なし");
+  } else {
+    lines.push(crossAspects.map(a => {
+      const orbStr = Math.round(a.aspect.orb * 10) / 10;
+      return `P.${a.planet2.name}${a.aspect.symbol}N.${a.planet1.name}(${orbStr}°)`;
+    }).join(" / "));
+  }
+  lines.push("");
+
+  lines.push("■ 進行天体同士のアスペクト");
+  if (!progAspects || progAspects.length === 0) {
+    lines.push("なし");
+  } else {
+    lines.push(progAspects.map(a => {
+      const orbStr = Math.round(a.aspect.orb * 10) / 10;
+      return `P.${a.planet1.name}${a.aspect.symbol}P.${a.planet2.name}(${orbStr}°)`;
+    }).join(" / "));
+  }
+
+  if (info.ingresses && info.ingresses.length > 0) {
+    lines.push("");
+    lines.push("■ 次のサイン移動");
+    for (const ing of info.ingresses) {
+      lines.push(`進行${ing.name}: ${ing.dateStr} 頃 ${ing.signName}入り（${ing.ageYears.toFixed(1)} 歳）`);
+    }
   }
 
   return lines.join("\n");

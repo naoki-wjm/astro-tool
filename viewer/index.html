@@ -4,18 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Astro Viewer — Astro Tool</title>
-  <meta name="description" content="ネイタル・トランジット・シナストリー・リターンチャートの計算と表示。SVGホイール、テーブル、テキストコピー対応。">
+  <meta name="description" content="ネイタル・トランジット・シナストリー・リターン・プログレッションの計算と表示。SVGホイール、テーブル、テキストコピー対応。">
   <link rel="icon" type="image/png" href="../icons/viewer.png">
   <link rel="apple-touch-icon" href="../icons/viewer.png">
   <meta property="og:title" content="Astro Viewer — Astro Tool">
-  <meta property="og:description" content="ネイタル・トランジット・シナストリー・リターンチャートの計算と表示。SVGホイール、テーブル、テキストコピー対応。">
+  <meta property="og:description" content="ネイタル・トランジット・シナストリー・リターン・プログレッションの計算と表示。SVGホイール、テーブル、テキストコピー対応。">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://dreams.parallel.jp/astro/viewer/">
   <meta property="og:image" content="https://dreams.parallel.jp/astro/icons/viewer.png">
   <meta property="og:locale" content="ja_JP">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Astro Viewer — Astro Tool">
-  <meta name="twitter:description" content="ネイタル・トランジット・シナストリー・リターンチャートの計算と表示。SVGホイール、テーブル、テキストコピー対応。">
+  <meta name="twitter:description" content="ネイタル・トランジット・シナストリー・リターン・プログレッションの計算と表示。SVGホイール、テーブル、テキストコピー対応。">
   <meta name="twitter:image" content="https://dreams.parallel.jp/astro/icons/viewer.png">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -27,7 +27,7 @@
       <button class="tab active" data-tab="natal">ネイタル</button>
       <button class="tab" data-tab="synastry">シナストリー</button>
       <button class="tab" data-tab="transit">トランジット</button>
-      <button class="tab" data-tab="return">リターン</button>
+      <button class="tab" data-tab="return">リターン・進行</button>
     </nav>
     <div class="header-actions">
       <button id="settingsToggle" class="header-btn" title="設定">⚙</button>
@@ -783,6 +783,7 @@
       <nav class="return-subnav">
         <button class="return-sub active" data-return="lunar">☽ ルナリターン</button>
         <button class="return-sub" data-return="solar">☉ ソーラーリターン</button>
+        <button class="return-sub" data-return="progression">⟳ プログレッション</button>
       </nav>
 
       <!-- ── ルナリターン ── -->
@@ -1355,6 +1356,270 @@
             <div class="panel-body">
               <pre id="srYearlyText" class="yearly-text"></pre>
               <div id="srYearlyStatus" class="status-text"></div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- ── プログレッション（一日一年法） ── -->
+      <div id="return-progression" class="return-panel">
+        <div class="layout-2col">
+          <div class="col-input">
+            <!-- ネイタル -->
+            <div class="card">
+              <h2 class="card-title">ネイタル</h2>
+              <p class="card-hint">ネイタルタブで保存したチャートを選択するか、手動で入力してください。</p>
+
+              <div class="form-group">
+                <label for="pgNatalSelect">保存済みチャート</label>
+                <select id="pgNatalSelect">
+                  <option value="">-- 手動入力 --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="pgNatalName">名前 (任意)</label>
+                <input type="text" id="pgNatalName" placeholder="例: 山田 太郎">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pgNatalDate">生年月日</label>
+                  <input type="date" id="pgNatalDate" value="1990-01-01">
+                </div>
+                <div class="form-group">
+                  <label for="pgNatalTime">出生時刻</label>
+                  <input type="time" id="pgNatalTime" value="12:00">
+                </div>
+              </div>
+
+              <div id="pgNatalLocSelect">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="pgNatalPref">都道府県</label>
+                    <select id="pgNatalPref"></select>
+                  </div>
+                  <div class="form-group">
+                    <label for="pgNatalCity">市区町村</label>
+                    <select id="pgNatalCity"></select>
+                  </div>
+                </div>
+              </div>
+
+              <div id="pgNatalLocCoord" style="display:none">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="pgNatalLat">緯度</label>
+                    <input type="number" id="pgNatalLat" step="0.0001" value="35.6762">
+                  </div>
+                  <div class="form-group">
+                    <label for="pgNatalLng">経度</label>
+                    <input type="number" id="pgNatalLng" step="0.0001" value="139.6503">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="pgNatalTz">タイムゾーン</label>
+                  <select id="pgNatalTz">
+                    <option value="9" selected>Asia/Tokyo (UTC+9)</option>
+                    <option value="0">UTC (UTC+0)</option>
+                    <option value="-5">US Eastern (UTC-5)</option>
+                    <option value="-8">US Pacific (UTC-8)</option>
+                    <option value="1">CET (UTC+1)</option>
+                    <option value="8">CST/China (UTC+8)</option>
+                    <option value="5.5">IST/India (UTC+5:30)</option>
+                    <option value="-4">US Eastern DST (UTC-4)</option>
+                    <option value="-7">US Pacific DST (UTC-7)</option>
+                    <option value="2">CEST (UTC+2)</option>
+                    <option value="10">AEST (UTC+10)</option>
+                    <option value="3">MSK (UTC+3)</option>
+                  </select>
+                </div>
+              </div>
+
+              <button id="pgNatalLocToggle" class="btn-text">緯度経度で入力</button>
+
+              <div class="form-group">
+                <label for="pgHouseSystem">ハウスシステム</label>
+                <select id="pgHouseSystem">
+                  <option value="P" selected>プラシーダス</option>
+                  <option value="K">コッホ</option>
+                  <option value="W">ホールサインハウス</option>
+                  <option value="E">イコールハウス</option>
+                </select>
+              </div>
+
+              <details class="form-details">
+                <summary class="form-details-summary">オプション天体</summary>
+                <div class="checkbox-group" id="pgOptionalBodies">
+                  <label><input type="checkbox" data-body="chiron"> キロン</label>
+                  <label><input type="checkbox" data-body="lilith"> リリス</label>
+                  <label><input type="checkbox" data-body="ceres"> セレス</label>
+                  <label><input type="checkbox" data-body="pallas"> パラス</label>
+                  <label><input type="checkbox" data-body="juno"> ジュノー</label>
+                  <label><input type="checkbox" data-body="vesta"> ベスタ</label>
+                </div>
+              </details>
+            </div>
+
+            <!-- 進行条件 -->
+            <div class="card" style="margin-top: 0.75rem">
+              <h2 class="card-title">プログレッション条件</h2>
+              <p class="card-hint">一日一年法（セカンダリープログレッション）。出生後1日＝人生の1年として、対象日の進行図を出します。</p>
+
+              <div class="form-group">
+                <label for="pgDate">対象日</label>
+                <input type="date" id="pgDate">
+              </div>
+
+              <div class="btn-row">
+                <button id="btnPgCalc" class="btn btn-primary" disabled>プログレッションを計算</button>
+                <button id="btnPgCopy" class="btn btn-secondary" disabled>コピー</button>
+              </div>
+
+              <div id="pgStatus" class="status-text"></div>
+            </div>
+          </div>
+
+          <!-- 右カラム: ホイール -->
+          <div class="col-wheel">
+            <div id="pgLegend" class="wheel-legend" style="display:none">
+              <span class="legend-item"><span class="legend-line legend-natal"></span> ネイタル</span>
+              <span class="legend-item"><span class="legend-line legend-progression"></span> <span id="pgLegendLabel">プログレッション</span></span>
+            </div>
+            <svg id="pgWheelSvg" viewBox="0 0 600 600" class="wheel-svg">
+              <text x="300" y="300" text-anchor="middle" fill="var(--text-muted)" font-size="14">
+                プログレッションを計算してください
+              </text>
+            </svg>
+            <button id="btnSavePg" class="btn-save-chart" style="display:none" title="チャート画像を保存">📥 画像を保存</button>
+          </div>
+        </div>
+
+        <!-- 下部: データテーブル -->
+        <div class="panels">
+          <details class="panel" id="panelPgPlanets" open>
+            <summary class="panel-header">
+              進行天体
+              <button class="btn-copy-section" data-section="pg-planets" title="進行天体をコピー">📋</button>
+            </summary>
+            <div class="panel-body">
+              <table class="data-table" id="tablePgPlanets">
+                <thead>
+                  <tr>
+                    <th>天体</th>
+                    <th>星座</th>
+                    <th>度数</th>
+                    <th title="出生図のハウス">N.H</th>
+                    <th>速度</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+              <p class="card-hint" style="margin-top:0.5rem">ハウス番号は出生図のカスプ基準。速度は進行図上の値（1日＝1年なので、1年あたりの移動量）。</p>
+            </div>
+          </details>
+
+          <details class="panel" id="panelPgIngress" open>
+            <summary class="panel-header">
+              次のサイン移動
+              <button class="btn-copy-section" data-section="pg-ingress" title="次のサイン移動をコピー">📋</button>
+            </summary>
+            <div class="panel-body">
+              <table class="data-table" id="tablePgIngress">
+                <thead>
+                  <tr>
+                    <th>進行天体</th>
+                    <th>現在</th>
+                    <th>次の星座</th>
+                    <th>時期</th>
+                    <th>年齢</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="panel" id="panelPgCrossAspects">
+            <summary class="panel-header">
+              ネイタルへのアスペクト (P→N)
+              <button class="btn-copy-section" data-section="pg-cross" title="クロスアスペクトをコピー">📋</button>
+            </summary>
+            <div class="panel-body">
+              <table class="data-table" id="tablePgCrossAspects">
+                <thead>
+                  <tr>
+                    <th>P天体</th>
+                    <th>アスペクト</th>
+                    <th>N天体</th>
+                    <th>オーブ</th>
+                    <th>接近</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="panel" id="panelPgAspects">
+            <summary class="panel-header">
+              進行天体同士のアスペクト
+              <button class="btn-copy-section" data-section="pg-aspects" title="進行天体同士のアスペクトをコピー">📋</button>
+            </summary>
+            <div class="panel-body">
+              <table class="data-table" id="tablePgAspects">
+                <thead>
+                  <tr>
+                    <th>天体1</th>
+                    <th>アスペクト</th>
+                    <th>天体2</th>
+                    <th>オーブ</th>
+                    <th>接近</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="panel" id="panelPgNatalPlanets">
+            <summary class="panel-header">
+              ネイタル天体
+              <button class="btn-copy-section" data-section="pg-natal" title="ネイタル天体をコピー">📋</button>
+            </summary>
+            <div class="panel-body">
+              <table class="data-table" id="tablePgNatal">
+                <thead>
+                  <tr>
+                    <th>天体</th>
+                    <th>星座</th>
+                    <th>度数</th>
+                    <th>H</th>
+                    <th>速度</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </details>
+
+          <details class="panel" id="panelPgHouses">
+            <summary class="panel-header">
+              進行ハウスカスプ（太陽弧法）
+              <button class="btn-copy-section" data-section="pg-houses" title="進行ハウスカスプをコピー">📋</button>
+            </summary>
+            <div class="panel-body">
+              <p class="card-hint" id="pgSolarArc" style="margin-bottom:0.5rem"></p>
+              <table class="data-table" id="tablePgHouses">
+                <thead>
+                  <tr>
+                    <th>ハウス</th>
+                    <th>カスプ</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
             </div>
           </details>
         </div>

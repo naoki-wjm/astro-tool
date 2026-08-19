@@ -609,3 +609,8 @@ details[open] > .panel-header::before { transform: rotate(90deg); }
 .legend-return {
   background: #E67E22;
 }
+
+/* プログレッション凡例色 */
+.legend-progression {
+  background: #2EAF9B;
+}
