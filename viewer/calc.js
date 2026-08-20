@@ -5,7 +5,7 @@
  */
 
 import SwissEPH from "../sweph/sweph-wasm.js";
-import { loadEphemeris } from "../shared/ephe.js?v=20260819b";
+import { loadEphemeris } from "../shared/ephe.js?v=20260820";
 
 // ── sweph-wasm インスタンス ──
 let swe = null;
@@ -178,10 +178,16 @@ export function getAspect(deg1, deg2, orb = 5, includeMinor = false) {
 
 /**
  * 接近・離反（applying/separating）判定
+ * オーブが縮む向きに動いているか＝瞬間の変化率で判定する。
+ *
+ * 旧実装は「1日後のオーブと今のオーブを比べる」方式だったが、月（約13°/日）のように
+ * 1日で離角がアスペクトを丸ごと通過する天体では、接近中でも「1日後にはもう通過後で遠い」
+ * ため常に離反と誤判定されていた（太陽・水星・金星もオーブが日速の半分未満だと同罪）。
+ * 変化率なら足の速さに関係なく正しい。fortune-gatekeeper の chart.ts と同じ式（2026-08-20）。
  * @param {number} deg1 - 天体1の黄経
  * @param {number} deg2 - 天体2の黄経
- * @param {number} speed1 - 天体1の速度
- * @param {number} speed2 - 天体2の速度
+ * @param {number} speed1 - 天体1の速度（度/日）
+ * @param {number} speed2 - 天体2の速度（度/日）
  * @param {number} aspectAngle - アスペクトの角度
  * @returns {boolean} true = applying（接近中）
  */
@@ -190,14 +196,12 @@ export function isApplying(deg1, deg2, speed1, speed2, aspectAngle) {
   if (diff > 180) diff -= 360;
   if (diff < -180) diff += 360;
 
-  const currentOrb = Math.abs(Math.abs(diff) - aspectAngle);
-  const futureDiff = (deg1 + speed1) - (deg2 + speed2);
-  let futureDiffNorm = futureDiff;
-  if (futureDiffNorm > 180) futureDiffNorm -= 360;
-  if (futureDiffNorm < -180) futureDiffNorm += 360;
-  const futureOrb = Math.abs(Math.abs(futureDiffNorm) - aspectAngle);
-
-  return futureOrb < currentOrb;
+  // |diff| の変化率。diff の符号で「差が開く向き」が決まる
+  const absDiffRate = (diff >= 0 ? 1 : -1) * (speed1 - speed2);
+  // オーブ＝| |diff| − アスペクト角 |。ぴったり成立の瞬間は「接近」とは言わない
+  const orbSigned = Math.abs(diff) - aspectAngle;
+  if (orbSigned === 0) return false;
+  return (orbSigned > 0 ? absDiffRate : -absDiffRate) < 0;
 }
 
 // ── ハウス判定 ──

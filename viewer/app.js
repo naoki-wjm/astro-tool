@@ -16,11 +16,11 @@ import { initSwe, calculateNatal, calculateAspects, calculateDistribution,
          formatNatalText, formatTransitText, formatSynastryText,
          formatLunarReturnText, formatSolarReturnText,
          calculateProgression, findNextProgressedIngress, formatProgressionText, fmtArc,
-         fmt, fmtText, SIGNS, HOUSE_SYSTEMS, PLANETS } from "./calc.js?v=20260819b";
+         fmt, fmtText, SIGNS, HOUSE_SYSTEMS, PLANETS } from "./calc.js?v=20260820";
 import { loadCharts, loadCities, getChartsData, getSettings, addChart, removeChart,
          getChartList, getChartById, getPrefectures, getCities, findCity, updateSettings,
-         exportData, importData } from "../shared/data.js?v=20260819b";
-import { drawWheel, drawDoubleWheel } from "./chart.js?v=20260819b";
+         exportData, importData } from "../shared/data.js?v=20260820";
+import { drawWheel, drawDoubleWheel } from "./chart.js?v=20260820";
 
 let currentChart = null;
 let currentAspects = null;
