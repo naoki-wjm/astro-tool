@@ -13,6 +13,7 @@
 <meta property="og:url" content="https://dreams.parallel.jp/astro/tutorial/">
 <meta property="og:image" content="https://dreams.parallel.jp/astro/icons/tutorial.png">
 <meta property="og:locale" content="ja_JP">
+<link rel="canonical" href="https://dreams.parallel.jp/astro/tutorial/">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="はじめての占星術 — Astro Tool">
 <meta name="twitter:description" content="質問に答えるだけでホロスコープの読み解き依頼文が完成するかんたんモード。占星術がはじめての方に。">
@@ -394,6 +395,13 @@
   }
 
   /* ── フッター ── */
+  .about {
+    margin-top: 3rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
   footer {
     margin-top: 3rem;
     padding-top: 1rem;
@@ -625,6 +633,10 @@
       <button class="btn btn-back" id="restart">最初からやり直す</button>
     </div>
   </div>
+
+  <section class="about">
+    <p>「はじめての占星術」は、アストロツール（Astro Tool）の入門用ページです。ホロスコープの読み方が分からなくても、いくつかの質問に答えていくと、あなたの出生図の天体配置と知りたいことをまとめた文章ができあがります。それを ChatGPT や Claude などの AI にそのまま貼り付ければ、占星術の読み解きを頼めます。出生データはブラウザの中だけで扱い、サーバーには送りません。</p>
+  </section>
 
   <footer>
     <a href="../">Astro Tool トップ</a> /

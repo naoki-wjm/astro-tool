@@ -13,6 +13,7 @@
 <meta property="og:url" content="https://dreams.parallel.jp/astro/reverse/">
 <meta property="og:image" content="https://dreams.parallel.jp/astro/icons/reverse.png">
 <meta property="og:locale" content="ja_JP">
+<link rel="canonical" href="https://dreams.parallel.jp/astro/reverse/">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="逆引きホロスコープ — Astro Tool">
 <meta name="twitter:description" content="天体のサイン配置から誕生日の候補を逆算して探すツール。創作キャラクターの誕生日設定に。">
@@ -428,6 +429,13 @@
   }
 
   /* -- Footer -- */
+  .about {
+    margin-top: 3rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
   footer {
     margin-top: 3rem;
     padding-top: 1.5rem;
@@ -510,6 +518,10 @@
     </div>
 
   </div>
+
+  <section class="about">
+    <p>逆引きホロスコープ（Reverse Horoscope）は、アストロツール（Astro Tool）のひとつで、ふつうのホロスコープ作成とは逆に「太陽は獅子座、月は魚座、金星は蟹座」のようにサインの組み合わせを先に決めて、その配置になる日付を探す無料ツールです。小説や漫画のキャラクターに、性格に合った誕生日を与えたいときにお使いください。サインがまだ決まっていなければ、性格から候補を絞る逆引きガイドからどうぞ。</p>
+  </section>
 
   <footer>
     Powered by <a href="https://github.com/ptprashanttripathi/sweph-wasm" target="_blank" rel="noopener">sweph-wasm</a> (Swiss Ephemeris WebAssembly)<br>

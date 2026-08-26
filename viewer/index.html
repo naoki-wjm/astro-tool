@@ -13,11 +13,15 @@
   <meta property="og:url" content="https://dreams.parallel.jp/astro/viewer/">
   <meta property="og:image" content="https://dreams.parallel.jp/astro/icons/viewer.png">
   <meta property="og:locale" content="ja_JP">
+  <link rel="canonical" href="https://dreams.parallel.jp/astro/viewer/">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Astro Viewer — Astro Tool">
   <meta name="twitter:description" content="ネイタル・トランジット・シナストリー・リターン・プログレッションの計算と表示。SVGホイール、テーブル、テキストコピー対応。">
   <meta name="twitter:image" content="https://dreams.parallel.jp/astro/icons/viewer.png">
   <link rel="stylesheet" href="style.css?v=20260820">
+  <style>
+    .about { max-width: 720px; margin: 2.5rem auto 1.5rem; padding: 0 1.5rem; font-size: 0.82rem; color: var(--text-muted); line-height: 1.8; }
+  </style>
 </head>
 <body>
   <!-- ── ヘッダー / タブ ── -->
@@ -1667,6 +1671,11 @@
       </div>
     </div>
   </div>
+
+  <!-- このツールについて -->
+  <section class="about">
+    <p>Astro Viewer は、アストロツール（Astro Tool）のメインとなる無料のホロスコープ作成ツールです。生年月日・出生時刻・出生地から出生図（ネイタルチャート）を計算し、天体のサイン・ハウス・アスペクトをホイールと表で表示します。トランジット（今の空との重ね合わせ）、シナストリー（二人の相性図）、ルナリターン・ソーラーリターン・プログレッションにも対応。結果はテキストとしてコピーできるので、AI に読み解きを頼むときの材料にも使えます。チャートデータはブラウザ内（localStorage）にだけ保存され、サーバーには送られません。</p>
+  </section>
 
   <!-- フッター -->
   <footer class="footer">

@@ -13,6 +13,7 @@
 <meta property="og:url" content="https://dreams.parallel.jp/astro/reverse/guide.html">
 <meta property="og:image" content="https://dreams.parallel.jp/astro/icons/guide.png">
 <meta property="og:locale" content="ja_JP">
+<link rel="canonical" href="https://dreams.parallel.jp/astro/reverse/guide.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="逆引きガイド — Astro Tool">
 <meta name="twitter:description" content="キャラクターの性格から天体サインを絞り込み、逆引きホロスコープで誕生日候補を探すためのガイド。">
@@ -467,6 +468,13 @@
   }
 
   /* -- Footer -- */
+  .about {
+    margin-top: 3rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
   footer {
     margin-top: 3rem;
     padding-top: 1.5rem;
@@ -566,6 +574,10 @@
 
   <!-- ===== Result ===== -->
   <div id="wizardResult"></div>
+
+  <section class="about">
+    <p>逆引きガイド（Reverse Guide）は、アストロツール（Astro Tool）の逆引きホロスコープを使う前に、キャラクターの性格や行動パターンから太陽・月・水星・金星・火星のサインを絞り込むための質問形式の案内です。占星術の知識がなくても、当てはまる選択肢を選んでいけばサインの候補が出て、そのまま誕生日の逆引き検索に引き継げます。</p>
+  </section>
 
   <footer>
     計算はすべてブラウザ内で完結します。データはサーバーに送信されません。<br>

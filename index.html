@@ -3,19 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Astro Tool — 占星術ツール</title>
-<meta name="description" content="ホロスコープの計算・表示、逆引き検索など、ブラウザで完結する占星術ツール集。">
+<title>Astro Tool（アストロツール）— 無料の占星術・ホロスコープツール</title>
+<meta name="description" content="アストロツール（Astro Tool）は、ホロスコープ（出生図）の作成・トランジット・シナストリー・リターン図の計算から、天体配置で誕生日を逆引きする検索まで、登録不要・無料でブラウザだけで完結する占星術ツール集です。">
 <link rel="icon" type="image/png" href="./icons/tool.png">
 <link rel="apple-touch-icon" href="./icons/tool.png">
-<meta property="og:title" content="Astro Tool — 占星術ツール">
-<meta property="og:description" content="ホロスコープの計算・表示、逆引き検索など、ブラウザで完結する占星術ツール集。">
+<meta property="og:title" content="Astro Tool（アストロツール）— 無料の占星術・ホロスコープツール">
+<meta property="og:description" content="アストロツール（Astro Tool）は、ホロスコープ（出生図）の作成・トランジット・シナストリー・リターン図の計算から、天体配置で誕生日を逆引きする検索まで、登録不要・無料でブラウザだけで完結する占星術ツール集です。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://dreams.parallel.jp/astro/">
 <meta property="og:image" content="https://dreams.parallel.jp/astro/icons/tool.png">
 <meta property="og:locale" content="ja_JP">
+<link rel="canonical" href="https://dreams.parallel.jp/astro/">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Astro Tool — 占星術ツール">
-<meta name="twitter:description" content="ホロスコープの計算・表示、逆引き検索など、ブラウザで完結する占星術ツール集。">
+<meta name="twitter:title" content="Astro Tool（アストロツール）— 無料の占星術・ホロスコープツール">
+<meta name="twitter:description" content="アストロツール（Astro Tool）は、ホロスコープ（出生図）の作成・トランジット・シナストリー・リターン図の計算から、天体配置で誕生日を逆引きする検索まで、登録不要・無料でブラウザだけで完結する占星術ツール集です。">
 <meta name="twitter:image" content="https://dreams.parallel.jp/astro/icons/tool.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
@@ -85,6 +86,24 @@
     color: var(--text-dim);
     line-height: 1.6;
   }
+
+  .about {
+    margin-bottom: 2.5rem;
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    line-height: 1.9;
+  }
+
+  .about h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-size: 1.25rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.6rem;
+  }
+
+  .about p + p { margin-top: 0.7rem; }
 
   .tools {
     display: flex;
@@ -167,6 +186,12 @@
     <h1>✦ Astro Tool ✦</h1>
     <p>ブラウザで完結する占星術ツール集</p>
   </header>
+
+  <section class="about">
+    <h2>アストロツールとは</h2>
+    <p>アストロツール（Astro Tool）は、西洋占星術のホロスコープを自分の手で出してみたい人のための、無料のオンラインツール集です。生年月日・出生時刻・出生地を入れるだけで、出生図（ネイタルチャート）の天体位置・ハウス・アスペクトを計算してホイール表示します。今の空との重ね合わせ（トランジット）、二人の相性図（シナストリー）、ルナリターン・ソーラーリターン・プログレッション（一日一年法）といった、ひとつ先の見方にも対応しています。</p>
+    <p>逆引きホロスコープでは「太陽は牡羊座、月は蠍座」のようにサインの組み合わせから誕生日の候補を探せるので、創作キャラクターの設定づくりにも使えます。計算エンジンは Swiss Ephemeris（sweph-wasm）で、会員登録は不要、出生データはサーバーに送らずお使いのブラウザの中だけで処理します。</p>
+  </section>
 
   <div class="tools">
     <a href="./viewer/" class="tool-card">
