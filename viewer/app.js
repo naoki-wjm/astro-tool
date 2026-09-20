@@ -16,11 +16,11 @@ import { initSwe, calculateNatal, calculateAspects, calculateDistribution,
          formatNatalText, formatTransitText, formatSynastryText,
          formatLunarReturnText, formatSolarReturnText,
          calculateProgression, findNextProgressedIngress, formatProgressionText, fmtArc,
-         fmt, fmtText, SIGNS, HOUSE_SYSTEMS, PLANETS } from "./calc.js?v=20260820";
+         fmt, fmtText, SIGNS, HOUSE_SYSTEMS, PLANETS, tzLabelOf } from "./calc.js?v=20260920";
 import { loadCharts, loadCities, getChartsData, getSettings, addChart, removeChart,
          getChartList, getChartById, getPrefectures, getCities, findCity, updateSettings,
-         exportData, importData } from "../shared/data.js?v=20260820";
-import { drawWheel, drawDoubleWheel } from "./chart.js?v=20260820";
+         exportData, importData } from "../shared/data.js?v=20260920";
+import { drawWheel, drawDoubleWheel } from "./chart.js?v=20260920";
 
 let currentChart = null;
 let currentAspects = null;
@@ -490,10 +490,21 @@ function syncOptionalBodies(sourceSelector) {
 
 // ── コピー ──
 
+/**
+ * コピー用テキストの規約行に載せる設定（オーブ・マイナーアスペクトの有無）
+ * 既定値は計算側（recalculateAspects 等）と同じ値に揃える
+ * @param {"natal"|"transit"|"synastry"} kind
+ */
+function copyOpts(kind) {
+  const s = getSettings();
+  const defaults = { natal: 5, transit: 1, synastry: 3 };
+  return { orb: s.orbs?.[kind] || defaults[kind], includeMinor: !!s.minorAspects };
+}
+
 function onCopyAll() {
   if (!currentChart || !currentAspects) return;
   const hsName = HOUSE_SYSTEMS.find(h => h.code === currentChart.params.houseSystem)?.name || "プラシーダス";
-  const text = formatNatalText(currentChart.params, currentChart, currentAspects, hsName);
+  const text = formatNatalText(currentChart.params, currentChart, currentAspects, hsName, copyOpts("natal"));
   copyToClipboard(text);
 }
 
@@ -1009,7 +1020,7 @@ function renderTransitHousesTable(chart) {
 function onTransitCopyAll() {
   if (!transitNatalChart || !transitPlanets || !transitCrossAspects) return;
   const hsName = HOUSE_SYSTEMS.find(h => h.code === transitNatalParams.houseSystem)?.name || "プラシーダス";
-  const text = formatTransitText(transitNatalParams, transitNatalChart, transitParams, transitPlanets, transitCrossAspects, hsName);
+  const text = formatTransitText(transitNatalParams, transitNatalChart, transitParams, transitPlanets, transitCrossAspects, hsName, copyOpts("transit"));
   copyToClipboard(text);
 }
 
@@ -1189,7 +1200,7 @@ function renderSynHousesTable(chart) {
 function onSynCopyAll() {
   if (!synChartA || !synChartB || !synCrossAspects) return;
   const hsName = HOUSE_SYSTEMS.find(h => h.code === synParamsA.houseSystem)?.name || "プラシーダス";
-  const text = formatSynastryText(synParamsA, synChartA, synParamsB, synChartB, synCrossAspects, hsName);
+  const text = formatSynastryText(synParamsA, synChartA, synParamsB, synChartB, synCrossAspects, hsName, copyOpts("synastry"));
   copyToClipboard(text);
 }
 
@@ -1905,7 +1916,7 @@ function onLrCopyAll() {
   if (!chart || !lrNatalChart) return;
 
   const hsName = HOUSE_SYSTEMS.find(h => h.code === lrNatalParams.houseSystem)?.name || "プラシーダス";
-  const text = formatLunarReturnText(lrNatalChart, chart, dt, lrLocationLabel, cross, hsName);
+  const text = formatLunarReturnText(lrNatalChart, chart, dt, lrLocationLabel, cross, hsName, copyOpts("transit"));
   copyToClipboard(text);
 }
 
@@ -1913,7 +1924,7 @@ function onSrCopyAll() {
   if (!srReturnChart || !srNatalChart) return;
 
   const hsName = HOUSE_SYSTEMS.find(h => h.code === srNatalParams.houseSystem)?.name || "プラシーダス";
-  let text = formatSolarReturnText(srNatalChart, srReturnChart, srReturnDateTime, srLocationLabel, srCrossAspects, hsName);
+  let text = formatSolarReturnText(srNatalChart, srReturnChart, srReturnDateTime, srLocationLabel, srCrossAspects, hsName, copyOpts("transit"));
 
   // 年間概要があれば付加
   if (srYearlyText) {
@@ -1927,11 +1938,12 @@ function onPgCopyAll() {
   if (!pgChart || !pgNatalChart) return;
 
   const hsName = HOUSE_SYSTEMS.find(h => h.code === pgNatalParams.houseSystem)?.name || "プラシーダス";
-  const natalLabel = pgNatalParams.name
-    ? `${pgNatalParams.name}`
-    : `${pgNatalParams.year}-${String(pgNatalParams.month).padStart(2, "0")}-${String(pgNatalParams.day).padStart(2, "0")}`;
+  const np = pgNatalParams;
+  const nTz = tzLabelOf(np.utcOffset);
+  const nDate = `${np.year}-${String(np.month).padStart(2, "0")}-${String(np.day).padStart(2, "0")} ${String(np.hour).padStart(2, "0")}:${String(np.minute).padStart(2, "0")}${nTz ? " " + nTz : ""}`;
+  const natalLabel = np.name ? `${np.name} — ${nDate}` : nDate;
   const text = formatProgressionText(pgNatalChart, pgChart,
-    { targetDateStr: pgTargetDateStr, natalLabel, houseSystemName: hsName, ingresses: pgIngresses },
+    { targetDateStr: pgTargetDateStr, natalLabel, houseSystemName: hsName, ingresses: pgIngresses, ...copyOpts("transit") },
     pgCrossAspects, pgAspects);
   copyToClipboard(text);
 }

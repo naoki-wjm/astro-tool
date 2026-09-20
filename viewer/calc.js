@@ -5,7 +5,7 @@
  */
 
 import SwissEPH from "../sweph/sweph-wasm.js";
-import { loadEphemeris } from "../shared/ephe.js?v=20260820";
+import { loadEphemeris } from "../shared/ephe.js?v=20260920";
 
 // ── sweph-wasm インスタンス ──
 let swe = null;
@@ -801,7 +801,7 @@ export function jdToLocalDateTime(jd, utcOffset) {
   const dt = swe.swe_revjul(localJd, 1);
   const h = Math.floor(dt.hour);
   const m = Math.floor((dt.hour - h) * 60);
-  const tzLabel = utcOffset === 9 ? "JST" : `UTC${utcOffset >= 0 ? "+" : ""}${utcOffset}`;
+  const tzLabel = tzLabelOf(utcOffset);
   return {
     year: dt.year,
     month: dt.month,
@@ -942,6 +942,29 @@ export function calcYearlyRange(startJd, endJd, natalPlanets, natalAngles, trans
 /**
  * 年間概要をテキスト化
  */
+/**
+ * UTC オフセット（時間）→ 表示ラベル（9 は JST、それ以外は UTC+n）
+ * @param {number} utcOffset
+ * @returns {string} 不明なら空文字
+ */
+export function tzLabelOf(utcOffset) {
+  if (utcOffset == null || Number.isNaN(utcOffset)) return "";
+  return utcOffset === 9 ? "JST" : `UTC${utcOffset >= 0 ? "+" : ""}${utcOffset}`;
+}
+
+/**
+ * コピー用テキストの規約行（ハウス方式・オーブ・マイナーアスペクトの有無）
+ * 既定から変えた設定を LLM に伝えるため、見出し直後に 1 行で並べる
+ * @param {string} houseSystemName
+ * @param {{orb?: number, includeMinor?: boolean}} opts
+ */
+function fmtSettingsLine(houseSystemName, opts = {}) {
+  const parts = [`ハウス: ${houseSystemName}`];
+  if (opts.orb != null) parts.push(`オーブ: ${opts.orb}°`);
+  if (opts.includeMinor != null) parts.push(`マイナーアスペクト: ${opts.includeMinor ? "あり" : "なし"}`);
+  return parts.join(" / ");
+}
+
 export function formatYearlyRangeText(yearlyData) {
   const { retrograde, ingresses, angleTransits, transitAspects, jdToDate: toDate } = yearlyData;
   const lines = [];
@@ -1005,15 +1028,16 @@ export function formatYearlyRangeText(yearlyData) {
 /**
  * ネイタルチャートのテキストコピー用文字列を生成
  */
-export function formatNatalText(params, chartData, aspects, houseSystemName = "プラシーダス") {
+export function formatNatalText(params, chartData, aspects, houseSystemName = "プラシーダス", opts = {}) {
   const { year, month, day, hour, minute } = params;
   const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  const tz = tzLabelOf(params.utcOffset);
   const locLabel = params.locationLabel || "";
 
   const lines = [];
-  lines.push(`【ネイタル】${dateStr} ${timeStr} ${locLabel}`);
-  lines.push(`ハウス: ${houseSystemName}`);
+  lines.push(`【ネイタル】${dateStr} ${timeStr}${tz ? " " + tz : ""} ${locLabel}`);
+  lines.push(fmtSettingsLine(houseSystemName, opts));
   lines.push("");
 
   // 天体位置
@@ -1049,22 +1073,24 @@ export function formatNatalText(params, chartData, aspects, houseSystemName = "�
 /**
  * トランジットチャートのテキストコピー用文字列を生成
  */
-export function formatTransitText(natalParams, natalChart, transitParams, transitPlanets, crossAspects, houseSystemName = "プラシーダス") {
+export function formatTransitText(natalParams, natalChart, transitParams, transitPlanets, crossAspects, houseSystemName = "プラシーダス", opts = {}) {
   const lines = [];
 
   // ネイタル情報
   const nd = natalParams;
   const nDateStr = `${nd.year}-${String(nd.month).padStart(2, "0")}-${String(nd.day).padStart(2, "0")}`;
   const nTimeStr = `${String(nd.hour).padStart(2, "0")}:${String(nd.minute).padStart(2, "0")}`;
+  const nTz = tzLabelOf(nd.utcOffset);
   lines.push(`【トランジット】`);
-  lines.push(`ネイタル: ${nDateStr} ${nTimeStr} ${nd.locationLabel || ""}`);
+  lines.push(`ネイタル: ${nDateStr} ${nTimeStr}${nTz ? " " + nTz : ""} ${nd.locationLabel || ""}`);
 
   // トランジット日時
   const td = transitParams;
   const tDateStr = `${td.year}-${String(td.month).padStart(2, "0")}-${String(td.day).padStart(2, "0")}`;
   const tTimeStr = `${String(td.hour).padStart(2, "0")}:${String(td.minute).padStart(2, "0")}`;
-  lines.push(`トランジット: ${tDateStr} ${tTimeStr}`);
-  lines.push(`ハウス: ${houseSystemName}`);
+  const tTz = tzLabelOf(td.utcOffset);
+  lines.push(`トランジット: ${tDateStr} ${tTimeStr}${tTz ? " " + tTz : ""}`);
+  lines.push(fmtSettingsLine(houseSystemName, opts));
   lines.push("");
 
   // ネイタル天体
@@ -1099,11 +1125,12 @@ export function formatTransitText(natalParams, natalChart, transitParams, transi
 /**
  * シナストリーのテキストコピー用文字列を生成
  */
-export function formatSynastryText(paramsA, chartA, paramsB, chartB, crossAspects, houseSystemName = "プラシーダス") {
+export function formatSynastryText(paramsA, chartA, paramsB, chartB, crossAspects, houseSystemName = "プラシーダス", opts = {}) {
   const lines = [];
 
   const fmtDate = (p) => {
-    return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")} ${String(p.hour).padStart(2, "0")}:${String(p.minute).padStart(2, "0")}`;
+    const tz = tzLabelOf(p.utcOffset);
+    return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")} ${String(p.hour).padStart(2, "0")}:${String(p.minute).padStart(2, "0")}${tz ? " " + tz : ""}`;
   };
 
   const nameA = paramsA.name || "Person A";
@@ -1112,7 +1139,7 @@ export function formatSynastryText(paramsA, chartA, paramsB, chartB, crossAspect
   lines.push(`【シナストリー】`);
   lines.push(`A: ${nameA} — ${fmtDate(paramsA)} ${paramsA.locationLabel || ""}`);
   lines.push(`B: ${nameB} — ${fmtDate(paramsB)} ${paramsB.locationLabel || ""}`);
-  lines.push(`ハウス: ${houseSystemName}`);
+  lines.push(fmtSettingsLine(houseSystemName, opts));
   lines.push("");
 
   // Person A 天体
@@ -1149,7 +1176,7 @@ export function formatSynastryText(paramsA, chartA, paramsB, chartB, crossAspect
 /**
  * ルナリターンのテキストコピー用文字列を生成
  */
-export function formatLunarReturnText(natalChart, returnChart, returnDateTime, locationLabel, crossAspects, houseSystemName = "プラシーダス") {
+export function formatLunarReturnText(natalChart, returnChart, returnDateTime, locationLabel, crossAspects, houseSystemName = "プラシーダス", opts = {}) {
   const lines = [];
 
   lines.push(`【ルナリターン】${returnDateTime.dateStr} ${returnDateTime.timeStr} ${returnDateTime.tzLabel}`);
@@ -1157,7 +1184,7 @@ export function formatLunarReturnText(natalChart, returnChart, returnDateTime, l
 
   const natalMoon = natalChart.planets.find(p => p.id === 1);
   if (natalMoon) lines.push(`ネイタル月: ${fmtText(natalMoon.lon)}`);
-  lines.push(`ハウス: ${houseSystemName}`);
+  lines.push(fmtSettingsLine(houseSystemName, opts));
   lines.push("");
 
   lines.push("■ 天体");
@@ -1186,7 +1213,7 @@ export function formatLunarReturnText(natalChart, returnChart, returnDateTime, l
 /**
  * ソーラーリターンのテキストコピー用文字列を生成
  */
-export function formatSolarReturnText(natalChart, returnChart, returnDateTime, locationLabel, crossAspects, houseSystemName = "プラシーダス") {
+export function formatSolarReturnText(natalChart, returnChart, returnDateTime, locationLabel, crossAspects, houseSystemName = "プラシーダス", opts = {}) {
   const lines = [];
 
   lines.push(`【ソーラーリターン】${returnDateTime.dateStr} ${returnDateTime.timeStr} ${returnDateTime.tzLabel}`);
@@ -1194,7 +1221,7 @@ export function formatSolarReturnText(natalChart, returnChart, returnDateTime, l
 
   const natalSun = natalChart.planets.find(p => p.id === 0);
   if (natalSun) lines.push(`ネイタル太陽: ${fmtText(natalSun.lon)}`);
-  lines.push(`ハウス: ${houseSystemName}`);
+  lines.push(fmtSettingsLine(houseSystemName, opts));
   lines.push("");
 
   lines.push("■ 天体");
@@ -1234,7 +1261,7 @@ export function formatProgressionText(natalChart, prog, info, crossAspects, prog
 
   lines.push(`【プログレッション（一日一年法）】対象日 ${info.targetDateStr}（年齢 ${prog.ageYears.toFixed(2)} 歳）`);
   if (info.natalLabel) lines.push(`ネイタル: ${info.natalLabel}`);
-  lines.push(`ハウス: ${hs}（進行天体のハウスは出生図基準、進行ASC/MCは太陽弧法）`);
+  lines.push(fmtSettingsLine(`${hs}（進行天体のハウスは出生図基準、進行ASC/MCは太陽弧法）`, { orb: info.orb, includeMinor: info.includeMinor }));
   lines.push(`太陽弧: ${fmtArc(prog.solarArc)}`);
   lines.push("");
 
