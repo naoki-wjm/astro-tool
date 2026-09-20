@@ -6,7 +6,7 @@
  */
 
 import SwissEPH from "../sweph/sweph-wasm.js";
-import { loadEphemeris } from "../shared/ephe.js?v=20260920";
+import { loadEphemeris } from "../shared/ephe.js?v=20260920b";
 import {
   loadCharts, loadCities, getChartList, addChart,
   getPrefectures, getCities, findCity,

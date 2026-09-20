@@ -5,7 +5,7 @@
  */
 
 import SwissEPH from "../sweph/sweph-wasm.js";
-import { loadEphemeris } from "../shared/ephe.js?v=20260920";
+import { loadEphemeris } from "../shared/ephe.js?v=20260920b";
 
 // ── sweph-wasm インスタンス ──
 let swe = null;
@@ -295,6 +295,11 @@ export function calculateNatal(params, options = {}) {
   return { planets, cusps, angles, jd };
 }
 
+/** Nノード（11）または Sノード（-1）か */
+function isNode(p) {
+  return p.id === 11 || p.id === -1;
+}
+
 /**
  * アスペクト一覧を生成
  * @param {Array} planets - calculateNatal の戻り値の planets
@@ -308,6 +313,8 @@ export function calculateAspects(planets, orb = 5, includeMinor = false) {
     for (let j = i + 1; j < planets.length; j++) {
       const p1 = planets[i];
       const p2 = planets[j];
+      // Nノード・Sノードは定義上つねに 180° なので、ノード同士は除外
+      if (isNode(p1) && isNode(p2)) continue;
       const asp = getAspect(p1.lon, p2.lon, orb, includeMinor);
       if (asp) {
         const applying = isApplying(p1.lon, p2.lon, p1.speed, p2.speed, asp.angle);
@@ -466,8 +473,9 @@ export function calculateCrossAspects(planets1, planets2, orb = 1, includeMinor 
   // ASC/MCへのアスペクト
   if (angles) {
     const anglePseudo = [
-      { name: "ASC", glyph: "ASC", color: "#A0A0A0", lon: angles.asc, speed: 0, retrograde: false, sign: signOf(angles.asc), house: null, id: -10 },
-      { name: "MC",  glyph: "MC",  color: "#A0A0A0", lon: angles.mc,  speed: 0, retrograde: false, sign: signOf(angles.mc),  house: null, id: -11 },
+      // glyph は空（表では glyph＋name を並べるので、入れると「ASC ASC」と二重になる）
+      { name: "ASC", glyph: "", color: "#A0A0A0", lon: angles.asc, speed: 0, retrograde: false, sign: signOf(angles.asc), house: null, id: -10 },
+      { name: "MC",  glyph: "", color: "#A0A0A0", lon: angles.mc,  speed: 0, retrograde: false, sign: signOf(angles.mc),  house: null, id: -11 },
     ];
     for (const angle of anglePseudo) {
       for (const p2 of planets2) {
